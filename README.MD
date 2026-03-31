@@ -14,10 +14,11 @@ Haley Kang
 Raj Shakya  
 Kunsang Gurung  
 Esemfon Edet  
+Solomon Legesse  
 
 ## Instructor
 Professor Diana Rabah
 
 ## TAs
 Jordan Black  
-Sai Sri harsha chakravarthula  
+Sai Sri Harsha Chakravarthula  
