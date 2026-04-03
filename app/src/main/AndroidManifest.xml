@@ -11,6 +11,9 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.GridSync">
+        <activity android:name="com.cloud9.gridsync.PlayLibraryActivity" />
+        <activity android:name="com.cloud9.gridsync.CreatePlayActivity" />
+        <activity android:name="com.cloud9.gridsync.DashboardActivity" />
         <activity
             android:name=".MainActivity"
             android:exported="true">
