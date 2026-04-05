@@ -24,4 +24,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "GridSync"
 include(":app")
- 
+include(":wear")
