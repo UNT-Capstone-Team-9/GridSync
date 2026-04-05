@@ -5,11 +5,13 @@ import android.os.Bundle
 import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatActivity
 import android.widget.ImageView
+import com.cloud9.gridsync.network.TabletServerManager
 
 class DashboardActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_dashboard)
+        TabletServerManager.start(applicationContext)
 
         val settingsIcon = findViewById<ImageView>(R.id.settingsIcon)
         val assignWatchesCard = findViewById<LinearLayout>(R.id.assignWatchesCard)

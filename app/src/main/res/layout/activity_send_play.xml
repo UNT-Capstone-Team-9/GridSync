@@ -10,13 +10,14 @@
         android:id="@+id/backButton"
         android:layout_width="48dp"
         android:layout_height="48dp"
-        android:background="#00000000"
+        android:background="@android:color/transparent"
         android:contentDescription="Back"
         android:src="@android:drawable/ic_media_previous"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
+        android:id="@+id/titleText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="12dp"
@@ -29,15 +30,27 @@
         app:layout_constraintTop_toTopOf="@id/backButton" />
 
     <TextView
-        android:layout_width="wrap_content"
+        android:id="@+id/assignmentSummaryText"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="This is the Send Play screen"
+        android:layout_marginTop="36dp"
+        android:gravity="center"
+        android:text="0 watches have roles and can receive the play"
         android:textColor="#1B263B"
-        android:textSize="22sp"
+        android:textSize="20sp"
         android:textStyle="bold"
-        app:layout_constraintTop_toBottomOf="@id/backButton"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintTop_toBottomOf="@id/backButton" />
+
+    <Button
+        android:id="@+id/sendPlayButton"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="28dp"
+        android:text="Send Play"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/assignmentSummaryText" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
