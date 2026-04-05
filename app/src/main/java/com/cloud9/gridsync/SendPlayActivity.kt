@@ -31,17 +31,25 @@ class SendPlayActivity : AppCompatActivity() {
         sendPlayButton.setOnClickListener {
             val play = PlayMessage(
                 playName = "Power Run",
-                assignment = "Check your assigned role on the watch",
+                assignments = mapOf(
+                    "QB"  to "Hand off to RB. Fake left after exchange.",
+                    "RB"  to "Take handoff, hit the A gap hard.",
+                    "WR1" to "Block the outside corner. Hold for 3 seconds.",
+                    "WR2" to "Run a short drag route as a decoy.",
+                    "TE"  to "Seal the outside linebacker. Do not release.",
+                    "LT"  to "Drive block left. Push defensive end outside.",
+                    "LG"  to "Pull right and lead block through the hole.",
+                    "C"   to "Snap and block the nose tackle.",
+                    "RG"  to "Double-team defensive tackle with RT.",
+                    "RT"  to "Double-team defensive tackle with RG.",
+                    "FB"  to "Lead block through the A gap ahead of RB."
+                ),
                 imageResourceName = ""
             )
 
-            val sentCount = TabletServerManager.sendPlayToAssigned(play)
+            TabletServerManager.sendPlayToAssigned(play)
 
-            Toast.makeText(
-                this,
-                "Play sent to $sentCount assigned watches",
-                Toast.LENGTH_SHORT
-            ).show()
+            Toast.makeText(this, "Play sent", Toast.LENGTH_SHORT).show()
 
             refreshAssignmentSummary()
         }

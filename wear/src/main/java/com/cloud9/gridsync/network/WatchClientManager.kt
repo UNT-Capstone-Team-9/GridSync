@@ -223,7 +223,8 @@ object WatchClientManager {
                             val play = PlayMessage(
                                 playName = message.optString("playName"),
                                 assignment = message.optString("assignment"),
-                                imageResourceName = message.optString("imageResourceName")
+                                imageResourceName = message.optString("imageResourceName"),
+                                role = message.optString("role")
                             )
                             mainHandler.post {
                                 listener?.onPlayReceived(play)
@@ -484,7 +485,8 @@ object WatchClientManager {
                             val play = PlayMessage(
                                 playName = message.optString("playName"),
                                 assignment = message.optString("assignment"),
-                                imageResourceName = message.optString("imageResourceName")
+                                imageResourceName = message.optString("imageResourceName"),
+                                role = message.optString("role")
                             )
                             mainHandler.post {
                                 listener?.onPlayReceived(play)
