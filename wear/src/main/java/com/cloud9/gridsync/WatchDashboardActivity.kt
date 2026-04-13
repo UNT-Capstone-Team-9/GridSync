@@ -31,7 +31,11 @@ class WatchDashboardActivity : Activity() {
         }
 
         override fun onPlayReceived(play: PlayMessage) {
-            playTitle.text = play.playName
+            playTitle.text = if (play.role.isNotBlank()) {
+                "${play.playName}  •  ${play.role}"
+            } else {
+                play.playName
+            }
             connectMessage.text = play.assignment
 
             if (play.imageResourceName.isNotBlank()) {

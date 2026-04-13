@@ -135,50 +135,48 @@ object TabletServerManager {
             }
     }
 
-    fun assignRole(watchId: String, role: String): Boolean {
-        val connection = connections[watchId] ?: return false
+    fun assignRole(watchId: String, role: String) {
+        val connection = connections[watchId] ?: return
         connection.role = role
+        notifyListeners()
 
-        return try {
-            sendJson(
-                connection.writer,
-                JSONObject()
-                    .put("type", "role")
-                    .put("role", role)
-            )
-            Log.d(TAG, "Assigned role $role to ${connection.watchName}")
-            notifyListeners()
-            true
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to assign role", e)
-            false
-        }
+        Thread {
+            try {
+                sendJson(
+                    connection.writer,
+                    JSONObject()
+                        .put("type", "role")
+                        .put("role", role)
+                )
+                Log.d(TAG, "Assigned role $role to ${connection.watchName}")
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to assign role", e)
+            }
+        }.start()
     }
 
-    fun sendPlayToAssigned(play: PlayMessage): Int {
-        var sentCount = 0
-
+    fun sendPlayToAssigned(play: PlayMessage) {
         connections.values.forEach { connection ->
-            if (!connection.role.isNullOrBlank()) {
+            val role = connection.role ?: return@forEach
+            if (role.isBlank()) return@forEach
+            val assignment = play.assignments[role] ?: play.assignments.values.firstOrNull() ?: ""
+            Thread {
                 try {
                     sendJson(
                         connection.writer,
                         JSONObject()
                             .put("type", "play")
                             .put("playName", play.playName)
-                            .put("assignment", play.assignment)
+                            .put("assignment", assignment)
                             .put("imageResourceName", play.imageResourceName)
-                            .put("role", connection.role ?: "")
+                            .put("role", role)
                     )
-                    sentCount++
-                    Log.d(TAG, "Sent play to ${connection.watchName}")
+                    Log.d(TAG, "Sent play '${play.playName}' to ${connection.watchName} as $role")
                 } catch (e: Exception) {
                     Log.e(TAG, "Failed sending play to ${connection.watchName}", e)
                 }
-            }
+            }.start()
         }
-
-        return sentCount
     }
 
     private fun registerService(context: Context, port: Int) {
@@ -481,50 +479,48 @@ object TabletServerManager {
             }
     }
 
-    fun assignRole(watchId: String, role: String): Boolean {
-        val connection = connections[watchId] ?: return false
+    fun assignRole(watchId: String, role: String) {
+        val connection = connections[watchId] ?: return
         connection.role = role
+        notifyListeners()
 
-        return try {
-            sendJson(
-                connection.writer,
-                JSONObject()
-                    .put("type", "role")
-                    .put("role", role)
-            )
-            Log.d(TAG, "Assigned role $role to ${connection.watchName}")
-            notifyListeners()
-            true
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to assign role", e)
-            false
-        }
+        Thread {
+            try {
+                sendJson(
+                    connection.writer,
+                    JSONObject()
+                        .put("type", "role")
+                        .put("role", role)
+                )
+                Log.d(TAG, "Assigned role $role to ${connection.watchName}")
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to assign role", e)
+            }
+        }.start()
     }
 
-    fun sendPlayToAssigned(play: PlayMessage): Int {
-        var sentCount = 0
-
+    fun sendPlayToAssigned(play: PlayMessage) {
         connections.values.forEach { connection ->
-            if (!connection.role.isNullOrBlank()) {
+            val role = connection.role ?: return@forEach
+            if (role.isBlank()) return@forEach
+            val assignment = play.assignments[role] ?: play.assignments.values.firstOrNull() ?: ""
+            Thread {
                 try {
                     sendJson(
                         connection.writer,
                         JSONObject()
                             .put("type", "play")
                             .put("playName", play.playName)
-                            .put("assignment", play.assignment)
+                            .put("assignment", assignment)
                             .put("imageResourceName", play.imageResourceName)
-                            .put("role", connection.role ?: "")
+                            .put("role", role)
                     )
-                    sentCount++
-                    Log.d(TAG, "Sent play to ${connection.watchName}")
+                    Log.d(TAG, "Sent play '${play.playName}' to ${connection.watchName} as $role")
                 } catch (e: Exception) {
                     Log.e(TAG, "Failed sending play to ${connection.watchName}", e)
                 }
-            }
+            }.start()
         }
-
-        return sentCount
     }
 
     private fun registerService(context: Context, port: Int) {
