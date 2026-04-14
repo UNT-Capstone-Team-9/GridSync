@@ -39,8 +39,7 @@
             android:contentDescription="Settings"
             android:focusable="true"
             android:padding="6dp"
-            android:src="@android:drawable/ic_menu_manage"
-            />
+            android:src="@android:drawable/ic_menu_manage" />
     </LinearLayout>
 
     <LinearLayout
@@ -60,14 +59,13 @@
         <ImageView
             android:layout_width="18dp"
             android:layout_height="18dp"
-            android:src="@android:drawable/stat_notify_sync_noanim"
-            />
+            android:src="@android:drawable/stat_notify_sync_noanim" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
-            android:text="Network Status:"
+            android:text="Network Status"
             android:textColor="#5B6576"
             android:textSize="14sp" />
 
@@ -76,7 +74,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="6dp"
-            android:text="Connected"
+            android:text="Listening"
             android:textColor="#14213D"
             android:textSize="14sp"
             android:textStyle="bold" />
@@ -94,7 +92,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
-            android:text="Connected Watches:"
+            android:text="Watches"
             android:textColor="#5B6576"
             android:textSize="14sp" />
 
@@ -103,7 +101,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="6dp"
-            android:text="9 / 11"
+            android:text="0 active / 0 assigned"
             android:textColor="#14213D"
             android:textSize="14sp"
             android:textStyle="bold" />
@@ -165,7 +163,6 @@
             android:layout_width="50dp"
             android:layout_height="50dp"
             android:src="@android:drawable/ic_menu_agenda" />
-
 
         <TextView
             android:layout_width="wrap_content"
@@ -267,30 +264,26 @@
             android:textSize="20sp"
             android:textStyle="bold" />
 
-        <LinearLayout
+        <ScrollView
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingHorizontal="16dp">
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:fillViewport="true">
 
-            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingVertical="9dp" android:text="QB                                Online" android:textColor="#1F2937" android:textSize="16sp" />
-            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingVertical="9dp" android:text="WR1                              Online" android:textColor="#1F2937" android:textSize="16sp" />
-            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingVertical="9dp" android:text="WR2                              Online" android:textColor="#1F2937" android:textSize="16sp" />
-            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingVertical="9dp" android:text="RB                                Online" android:textColor="#1F2937" android:textSize="16sp" />
-            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingVertical="9dp" android:text="TE                                Online" android:textColor="#1F2937" android:textSize="16sp" />
-            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingVertical="9dp" android:text="LT                                Online" android:textColor="#1F2937" android:textSize="16sp" />
-            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingVertical="9dp" android:text="LG                                Online" android:textColor="#1F2937" android:textSize="16sp" />
-            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingVertical="9dp" android:text="C                                  Online" android:textColor="#1F2937" android:textSize="16sp" />
-            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingVertical="9dp" android:text="RG                                Online" android:textColor="#1F2937" android:textSize="16sp" />
-            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingVertical="9dp" android:text="LB                                Offline" android:textColor="#7B8794" android:textSize="16sp" />
-            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingVertical="9dp" android:text="CB                                Offline" android:textColor="#7B8794" android:textSize="16sp" />
-        </LinearLayout>
+            <LinearLayout
+                android:id="@+id/playerStatusListContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingHorizontal="16dp"
+                android:paddingBottom="12dp" />
+        </ScrollView>
     </LinearLayout>
 
     <LinearLayout
         android:id="@+id/sessionLogPanel"
         android:layout_width="0dp"
-        android:layout_height="120dp"
+        android:layout_height="140dp"
         android:background="@drawable/card_background"
         android:elevation="4dp"
         android:orientation="vertical"
@@ -307,29 +300,19 @@
             android:textSize="18sp"
             android:textStyle="bold" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
             android:layout_marginTop="10dp"
-            android:text='14:32 - Play "Power Sweep Left" sent successfully'
-            android:textColor="#52606D"
-            android:textSize="14sp" />
+            android:fillViewport="true">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:text="14:30 - 9 devices acknowledged"
-            android:textColor="#52606D"
-            android:textSize="14sp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:text="14:28 - Player assignments updated"
-            android:textColor="#52606D"
-            android:textSize="14sp" />
+            <LinearLayout
+                android:id="@+id/sessionLogListContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+        </ScrollView>
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

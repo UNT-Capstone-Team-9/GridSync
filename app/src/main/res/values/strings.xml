@@ -1,3 +1,17 @@
 <resources>
     <string name="app_name">GridSync</string>
+
+    <string-array name="football_roles">
+        <item>Quarterback (QB)</item>
+        <item>Running Back (RB)</item>
+        <item>Wide Receiver 1 (WR1)</item>
+        <item>Wide Receiver 2 (WR2)</item>
+        <item>Tight End (TE)</item>
+        <item>Center (C)</item>
+        <item>Left Guard (LG)</item>
+        <item>Right Guard (RG)</item>
+        <item>Left Tackle (LT)</item>
+        <item>Right Tackle (RT)</item>
+        <item>Fullback (FB)</item>
+    </string-array>
 </resources>
