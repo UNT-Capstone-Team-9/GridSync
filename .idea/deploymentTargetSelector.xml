@@ -4,10 +4,10 @@
     <selectionStates>
       <SelectionState runConfigName="app">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2026-04-05T10:10:12.843665100Z">
+        <DropdownSelection timestamp="2026-04-13T23:23:14.496771Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\rajsh\.android\avd\GridsyncTablet.avd" />
+              <DeviceId pluginId="PhysicalDevice" identifier="serial=MTK0002503151610410" />
             </handle>
           </Target>
         </DropdownSelection>
@@ -15,10 +15,10 @@
       </SelectionState>
       <SelectionState runConfigName="wear">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2026-04-05T09:33:08.698834600Z">
+        <DropdownSelection timestamp="2026-04-13T23:24:09.147774Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\rajsh\.android\avd\Wear_OS_XL_Round.avd" />
+              <DeviceId pluginId="PhysicalDevice" identifier="serial=MTK0002503151610410" />
             </handle>
           </Target>
         </DropdownSelection>

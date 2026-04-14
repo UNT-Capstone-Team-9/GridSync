@@ -1,3 +1,6 @@
+
+/*
+
 // NEW EMULATOR FALLBACK CODE HERE
 // This code uses 10.0.2.2 and port 6001.
 
@@ -343,7 +346,12 @@ object TabletServerManager {
 }
 
 
-/*
+
+
+ */
+
+
+
 // ORIGINAL CODE IS HERE For real devices
 // This code uses NSD to find the tablet automatically.
 
@@ -685,4 +693,4 @@ object TabletServerManager {
         writer.flush()
     }
 }
-*/
+
