@@ -14,6 +14,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.GridSync">
 
+        <activity android:name="com.cloud9.gridsync.WatchDashboardActivity" />
         <activity android:name="com.cloud9.gridsync.SettingsActivity" />
         <activity android:name="com.cloud9.gridsync.SendPlayActivity" />
         <activity android:name="com.cloud9.gridsync.AssignWatchesActivity" />
