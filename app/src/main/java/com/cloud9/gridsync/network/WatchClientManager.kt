@@ -5,6 +5,8 @@ import android.net.wifi.WifiManager
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.BufferedWriter
@@ -24,10 +26,16 @@ object WatchClientManager {
     interface WatchMessageListener {
         fun onConnectionChanged(isConnected: Boolean)
         fun onRoleChanged(role: String)
-        fun onPlayReceived(playText: String)
+        fun onPlayReceived(
+            playName: String,
+            playTextMessage: String,
+            movements: Map<String, List<PointData>>
+        )
+        fun onTextMessageReceived(role: String, message: String)
     }
 
     private val mainHandler = Handler(Looper.getMainLooper())
+    private val gson = Gson()
 
     private var listener: WatchMessageListener? = null
     private var appContext: Context? = null
@@ -41,6 +49,9 @@ object WatchClientManager {
 
     @Volatile
     private var socket: Socket? = null
+
+    @Volatile
+    private var writer: BufferedWriter? = null
 
     private val reconnectRunnable = Runnable {
         if (shouldRun && !connected) {
@@ -90,7 +101,7 @@ object WatchClientManager {
                 }
 
                 val prefix = ipAddress.substringBeforeLast(".")
-                Log.d(TAG, "Scanning subnet: $prefix.x")
+                Log.d(TAG, "Scanning subnet $prefix.x")
 
                 for (i in 1..254) {
                     if (!shouldRun || connected) return@thread
@@ -115,7 +126,7 @@ object WatchClientManager {
             val s = Socket()
             s.connect(InetSocketAddress(host, port), 300)
 
-            val writer = BufferedWriter(OutputStreamWriter(s.getOutputStream()))
+            val localWriter = BufferedWriter(OutputStreamWriter(s.getOutputStream()))
             val reader = BufferedReader(InputStreamReader(s.getInputStream()))
 
             val hello = JSONObject()
@@ -124,9 +135,9 @@ object WatchClientManager {
                 .put("watchId", watchId)
                 .put("watchName", "Watch-$watchId")
 
-            writer.write(hello.toString())
-            writer.newLine()
-            writer.flush()
+            localWriter.write(hello.toString())
+            localWriter.newLine()
+            localWriter.flush()
 
             val responseLine = reader.readLine()
             val response = JSONObject(responseLine ?: "{}")
@@ -137,6 +148,7 @@ object WatchClientManager {
             }
 
             socket = s
+            writer = localWriter
             connected = true
             postConnection(true)
 
@@ -164,8 +176,26 @@ object WatchClientManager {
                             val role = message.optString("role", "Unassigned")
                             val playName = message.optString("playName", "")
                             val assignment = message.optString("assignment", "")
+                            val movementJson = message.optString("movements", "{}")
+
+                            val movementType = object : TypeToken<Map<String, List<PointData>>>() {}.type
+                            val movements: Map<String, List<PointData>> = try {
+                                gson.fromJson(movementJson, movementType) ?: emptyMap()
+                            } catch (_: Exception) {
+                                emptyMap()
+                            }
+
                             postRole(role)
-                            postPlay("$playName\n\n$assignment")
+                            sendDeliveryAck(role, "play", playName)
+                            postPlay(playName, assignment, movements)
+                        }
+
+                        "text_message" -> {
+                            val role = message.optString("role", "Unassigned")
+                            val text = message.optString("message", "")
+                            postRole(role)
+                            sendDeliveryAck(role, "text_message", "")
+                            postTextMessage(role, text)
                         }
 
                         "pong" -> {
@@ -186,6 +216,27 @@ object WatchClientManager {
         }
     }
 
+    private fun sendDeliveryAck(role: String, kind: String, name: String) {
+        thread {
+            try {
+                val currentWriter = writer ?: return@thread
+                val ack = JSONObject()
+                    .put("type", "delivery_ack")
+                    .put("role", role)
+                    .put("kind", kind)
+                    .put("name", name)
+
+                synchronized(currentWriter) {
+                    currentWriter.write(ack.toString())
+                    currentWriter.newLine()
+                    currentWriter.flush()
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Ack send failed", e)
+            }
+        }
+    }
+
     private fun scheduleReconnect() {
         mainHandler.removeCallbacks(reconnectRunnable)
         mainHandler.postDelayed(reconnectRunnable, RECONNECT_DELAY_MS)
@@ -197,6 +248,7 @@ object WatchClientManager {
         } catch (_: Exception) {
         }
         socket = null
+        writer = null
     }
 
     private fun postConnection(isConnected: Boolean) {
@@ -211,9 +263,19 @@ object WatchClientManager {
         }
     }
 
-    private fun postPlay(playText: String) {
+    private fun postPlay(
+        playName: String,
+        playTextMessage: String,
+        movements: Map<String, List<PointData>>
+    ) {
         mainHandler.post {
-            listener?.onPlayReceived(playText)
+            listener?.onPlayReceived(playName, playTextMessage, movements)
+        }
+    }
+
+    private fun postTextMessage(role: String, message: String) {
+        mainHandler.post {
+            listener?.onTextMessageReceived(role, message)
         }
     }
 

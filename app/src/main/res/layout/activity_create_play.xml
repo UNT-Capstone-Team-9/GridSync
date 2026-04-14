@@ -3,42 +3,96 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#EEF3F8"
-    android:padding="20dp">
+    android:background="#121212">
 
-    <ImageButton
-        android:id="@+id/backButton"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:background="#00000000"
-        android:contentDescription="Back"
-        android:src="@android:drawable/ic_media_previous"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <TextView
-        android:id="@+id/screenTitle"
-        android:layout_width="wrap_content"
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/header"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginStart="12dp"
-        android:text="Create Play"
-        android:textColor="#14213D"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="@id/backButton"
-        app:layout_constraintStart_toEndOf="@id/backButton"
-        app:layout_constraintTop_toTopOf="@id/backButton" />
+        android:padding="16dp"
+        android:background="#1B263B"
+        app:layout_constraintTop_toTopOf="parent">
 
-    <TextView
-        android:layout_width="wrap_content"
+        <ImageButton
+            android:id="@+id/backButton"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_media_previous"
+            app:tint="#FFFFFF"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <EditText
+            android:id="@+id/etPlayName"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:hint="Enter Play Name"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#AAAAAA"
+            android:background="@android:color/transparent"
+            android:textSize="20sp"
+            app:layout_constraintBottom_toBottomOf="@id/backButton"
+            app:layout_constraintEnd_toStartOf="@+id/btnSavePlay"
+            app:layout_constraintStart_toEndOf="@id/backButton"
+            app:layout_constraintTop_toTopOf="@id/backButton" />
+
+        <Button
+            android:id="@+id/btnSavePlay"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="SAVE"
+            android:backgroundTint="#FCA311"
+            android:textColor="#14213D"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <LinearLayout
+        android:id="@+id/roleToolbar"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="This is the Create Play screen"
-        android:textColor="#1B263B"
-        android:textSize="22sp"
-        android:textStyle="bold"
-        app:layout_constraintTop_toBottomOf="@id/backButton"
+        android:orientation="horizontal"
+        android:padding="8dp"
+        android:background="#2C3E50"
+        app:layout_constraintTop_toBottomOf="@id/header">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Drawing for: "
+            android:textColor="#FFFFFF"
+            android:layout_gravity="center_vertical"
+            android:layout_marginEnd="8dp"/>
+
+        <Spinner
+            android:id="@+id/spinnerRoles"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:entries="@array/football_roles"
+            android:backgroundTint="#FFFFFF" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1"/>
+
+        <Button
+            android:id="@+id/btnClear"
+            style="?android:attr/borderlessButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="CLEAR"
+            android:textColor="#FF4444" />
+    </LinearLayout>
+
+    <com.cloud9.gridsync.ui.CoachDrawingView
+        android:id="@+id/coachDrawingView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintTop_toBottomOf="@id/roleToolbar"
+        android:background="#1B5E20" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -30,18 +30,6 @@
         app:layout_constraintTop_toTopOf="@id/backButton" />
 
     <TextView
-        android:id="@+id/editRolesButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Edit Roles"
-        android:textColor="#005BBB"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="@id/backButton"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="@id/backButton" />
-
-    <TextView
         android:id="@+id/pairCodeText"
         android:layout_width="0dp"
         android:layout_height="wrap_content"

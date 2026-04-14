@@ -2,18 +2,26 @@ package com.cloud9.gridsync
 
 import android.graphics.Color
 import android.os.Bundle
+import android.view.View
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
+import android.widget.ImageButton
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.cloud9.gridsync.network.ConnectedWatch
+import com.cloud9.gridsync.network.RoleRepository
+import com.cloud9.gridsync.network.RoleStatusInfo
+import com.cloud9.gridsync.network.SessionLogManager
 import com.cloud9.gridsync.network.TabletServerManager
 
-class SendPlayActivity : AppCompatActivity() {
+class SendPlayActivity : AppCompatActivity(), TabletServerManager.WatchListListener {
 
     private lateinit var messageInput: EditText
     private lateinit var sendButton: Button
+    private lateinit var roleStatusContainer: LinearLayout
 
     private lateinit var statusQB: TextView
     private lateinit var statusWR1: TextView
@@ -43,8 +51,10 @@ class SendPlayActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_send_play)
 
+        val backButton = findViewById<ImageButton>(R.id.backButton)
         messageInput = findViewById(R.id.messageInput)
         sendButton = findViewById(R.id.sendButton)
+        roleStatusContainer = findViewById(R.id.roleStatusContainer)
 
         statusQB = findViewById(R.id.statusQB)
         statusWR1 = findViewById(R.id.statusWR1)
@@ -70,13 +80,14 @@ class SendPlayActivity : AppCompatActivity() {
         checkRT = findViewById(R.id.checkRT)
         checkCB = findViewById(R.id.checkCB)
 
+        buildRoleRows()
         updateStatuses()
 
         sendButton.setOnClickListener {
             val message = messageInput.text.toString().trim()
 
             if (message.isEmpty()) {
-                Toast.makeText(this, "Enter a message first", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@SendPlayActivity, "Enter a message first", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
@@ -94,7 +105,7 @@ class SendPlayActivity : AppCompatActivity() {
             if (checkCB.isChecked) selectedRoles.add("CB")
 
             if (selectedRoles.isEmpty()) {
-                Toast.makeText(this, "Select at least one role", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@SendPlayActivity, "Select at least one role", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
@@ -102,7 +113,7 @@ class SendPlayActivity : AppCompatActivity() {
             val delivered = mutableListOf<String>()
             val skipped = mutableListOf<String>()
 
-            for (role in selectedRoles) {
+            selectedRoles.forEach { role ->
                 if (connectedRoles.contains(role)) {
                     TabletServerManager.sendToRole(role, message)
                     delivered.add(role)
@@ -111,13 +122,17 @@ class SendPlayActivity : AppCompatActivity() {
                 }
             }
 
+            if (delivered.isNotEmpty()) {
+                SessionLogManager.addEntry("Coach message sent to ${delivered.joinToString(", ")}")
+            }
+
             val resultText = buildString {
                 if (delivered.isNotEmpty()) {
-                    append("Sent to: ${delivered.joinToString(", ")}")
+                    append("Sent to ${delivered.joinToString(", ")}")
                 }
                 if (skipped.isNotEmpty()) {
-                    if (isNotEmpty()) append(" | ")
-                    append("Skipped: ${skipped.joinToString(", ")} (disconnected)")
+                    if (isNotEmpty()) append("  ")
+                    append("Skipped ${skipped.joinToString(", ")}")
                 }
             }
 
@@ -127,13 +142,41 @@ class SendPlayActivity : AppCompatActivity() {
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+        TabletServerManager.addListener(this)
+        updateStatuses()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        TabletServerManager.removeListener(this)
+    }
+
+    override fun onWatchListChanged(watches: List<ConnectedWatch>) {
+        runOnUiThread {
+            updateStatuses()
+        }
+    }
+
     override fun onResume() {
         super.onResume()
         updateStatuses()
     }
 
-    private fun updateStatuses() {
-        val connectedRoles = TabletServerManager.getConnectedRoles()
+    private fun buildRoleRows() {
+        roleStatusContainer.removeAllViews()
+        roleRowMap.clear()
+
+        roles.forEach { role ->
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                setPadding(0, dp(10), 0, dp(10))
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+            }
 
         setRoleStatus(statusQB, connectedRoles.contains("QB"))
         setRoleStatus(statusWR1, connectedRoles.contains("WR1"))
@@ -156,5 +199,23 @@ class SendPlayActivity : AppCompatActivity() {
             textView.text = "◦ Disconnected"
             textView.setTextColor(Color.parseColor("#B00020"))
         }
+    }
+
+    private fun applyRoleStatus(textView: TextView, info: RoleStatusInfo?) {
+        val status = info?.status ?: "Unassigned"
+        textView.text = status
+
+        textView.setTextColor(
+            when (status) {
+                "Online" -> Color.parseColor("#0F9D58")
+                "Connecting" -> Color.parseColor("#F59E0B")
+                "Offline" -> Color.parseColor("#7B8794")
+                else -> Color.parseColor("#1F2937")
+            }
+        )
+    }
+
+    private fun dp(value: Int): Int {
+        return (value * resources.displayMetrics.density).toInt()
     }
 }

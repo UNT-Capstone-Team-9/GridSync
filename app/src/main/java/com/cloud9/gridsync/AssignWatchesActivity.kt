@@ -1,8 +1,8 @@
 package com.cloud9.gridsync
 
 import android.os.Bundle
+import android.view.View
 import android.widget.ArrayAdapter
-import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.ListView
 import android.widget.TextView
@@ -21,13 +21,16 @@ class AssignWatchesActivity : AppCompatActivity() {
     private lateinit var watchListView: ListView
 
     private lateinit var adapter: ArrayAdapter<String>
+
     private var currentWatches: List<ConnectedWatch> = emptyList()
     private var roles: MutableList<String> = mutableListOf()
 
     private val watchListener = object : TabletServerManager.WatchListListener {
         override fun onWatchListChanged(watches: List<ConnectedWatch>) {
             currentWatches = watches
-            renderWatchList(watches)
+            runOnUiThread {
+                renderWatchList(watches)
+            }
         }
     }
 
@@ -35,46 +38,39 @@ class AssignWatchesActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_assign_watches)
 
-        TabletServerManager.start(applicationContext)
-
         val backButton = findViewById<ImageButton>(R.id.backButton)
-        val editRolesButton = findViewById<TextView>(R.id.editRolesButton)
         statusText = findViewById(R.id.statusText)
         pairCodeText = findViewById(R.id.pairCodeText)
         emptyText = findViewById(R.id.emptyText)
         watchListView = findViewById(R.id.watchListView)
 
-        roles = RoleRepository.getRoles(this)
-
         backButton.setOnClickListener {
             finish()
         }
 
-        editRolesButton.setOnClickListener {
-            showEditRolesDialog()
-        }
-
-        pairCodeText.text = "Pair code  ${TabletServerManager.PAIR_CODE}"
+        roles = RoleRepository.getRoles(this).map { it.trim() }.toMutableList()
 
         adapter = ArrayAdapter(
             this,
             android.R.layout.simple_list_item_1,
             mutableListOf()
         )
-
         watchListView.adapter = adapter
 
+        pairCodeText.text = "Pair code ${TabletServerManager.PAIR_CODE}"
+        statusText.text = "Waiting for watches"
+
         watchListView.setOnItemClickListener { _, _, position, _ ->
-            val watch = currentWatches[position]
-            showAssignRoleDialog(watch)
+            if (position in currentWatches.indices) {
+                showAssignRoleDialog(currentWatches[position])
+            }
         }
     }
 
     override fun onStart() {
         super.onStart()
         TabletServerManager.addListener(watchListener)
-        currentWatches = TabletServerManager.getConnectedWatches()
-        renderWatchList(currentWatches)
+        renderWatchList(TabletServerManager.getConnectedWatches())
     }
 
     override fun onStop() {
@@ -83,67 +79,85 @@ class AssignWatchesActivity : AppCompatActivity() {
     }
 
     private fun renderWatchList(watches: List<ConnectedWatch>) {
-        val count = watches.size
-        statusText.text = if (count == 1) {
-            "1 watch connected"
-        } else {
-            "$count watches connected"
+        val items = watches.map { watch ->
+            val roleText = watch.role ?: "Unassigned"
+            "${watch.watchName}   ID ${watch.watchId}   Role $roleText"
         }
 
-        emptyText.visibility = if (watches.isEmpty()) TextView.VISIBLE else TextView.GONE
-        watchListView.visibility = if (watches.isEmpty()) ListView.GONE else ListView.VISIBLE
-
         adapter.clear()
-        adapter.addAll(
-            watches.map {
-                val roleLabel = it.role ?: "Unassigned"
-                "${it.watchName}  •  ${it.ipAddress}  •  ${roleLabel}"
-            }
-        )
+        adapter.addAll(items)
         adapter.notifyDataSetChanged()
+
+        if (watches.isEmpty()) {
+            statusText.text = "Waiting for watches"
+            emptyText.text = "No connected watches"
+            emptyText.visibility = View.VISIBLE
+            watchListView.visibility = View.GONE
+        } else {
+            statusText.text = "Tap a watch to assign or edit role"
+            emptyText.visibility = View.GONE
+            watchListView.visibility = View.VISIBLE
+        }
     }
 
     private fun showAssignRoleDialog(watch: ConnectedWatch) {
-        if (roles.isEmpty()) {
-            Toast.makeText(this, "No roles available. Add roles first.", Toast.LENGTH_SHORT).show()
-            return
-        }
+        val options = mutableListOf("Unassign")
+        options.addAll(roles)
 
         AlertDialog.Builder(this)
             .setTitle("Assign role to ${watch.watchName}")
-            .setItems(roles.toTypedArray()) { _, which ->
-                TabletServerManager.assignRole(watch.watchId, roles[which])
+            .setItems(options.toTypedArray()) { _, which ->
+                val selected = options[which].trim()
+
+                if (selected == "Unassign") {
+                    showUnassignConfirmation(watch)
+                    return@setItems
+                }
+
+                val existingWatchId = TabletServerManager.getAssignedWatchIdForRole(selected)
+
+                if (existingWatchId != null && existingWatchId != watch.watchId) {
+                    val existingWatchName = currentWatches.firstOrNull {
+                        it.watchId == existingWatchId
+                    }?.watchName ?: "another watch"
+
+                    AlertDialog.Builder(this)
+                        .setTitle("Move role")
+                        .setMessage("$selected is currently assigned to $existingWatchName. Move it to ${watch.watchName}?")
+                        .setPositiveButton("Move") { _, _ ->
+                            TabletServerManager.assignRole(watch.watchId, selected)
+                            Toast.makeText(
+                                this,
+                                "${watch.watchName} assigned to $selected",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                        .setNegativeButton("Cancel", null)
+                        .show()
+                } else {
+                    TabletServerManager.assignRole(watch.watchId, selected)
+                    Toast.makeText(
+                        this,
+                        "${watch.watchName} assigned to $selected",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
             }
             .setNegativeButton("Cancel", null)
             .show()
     }
 
-    private fun showEditRolesDialog() {
-        val input = EditText(this)
-        input.setText(roles.joinToString("\n"))
-        input.hint = "Enter one role per line"
-
+    private fun showUnassignConfirmation(watch: ConnectedWatch) {
         AlertDialog.Builder(this)
-            .setTitle("Edit roles")
-            .setView(input)
-            .setPositiveButton("Save") { _, _ ->
-                val updatedRoles = input.text.toString()
-                    .lines()
-                    .map { it.trim() }
-                    .filter { it.isNotBlank() }
-
-                if (updatedRoles.isEmpty()) {
-                    Toast.makeText(this, "Role list cannot be empty", Toast.LENGTH_SHORT).show()
-                } else {
-                    roles = updatedRoles.toMutableList()
-                    RoleRepository.saveRoles(this, roles)
-                    Toast.makeText(this, "Roles updated", Toast.LENGTH_SHORT).show()
-                }
-            }
-            .setNeutralButton("Reset") { _, _ ->
-                RoleRepository.resetRoles(this)
-                roles = RoleRepository.getRoles(this)
-                Toast.makeText(this, "Roles reset", Toast.LENGTH_SHORT).show()
+            .setTitle("Unassign watch")
+            .setMessage("Remove the role from ${watch.watchName}?")
+            .setPositiveButton("Unassign") { _, _ ->
+                TabletServerManager.unassignRole(watch.watchId)
+                Toast.makeText(
+                    this,
+                    "${watch.watchName} is now unassigned",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
             .setNegativeButton("Cancel", null)
             .show()
