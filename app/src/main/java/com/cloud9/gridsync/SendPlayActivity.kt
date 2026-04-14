@@ -1,7 +1,12 @@
 package com.cloud9.gridsync
 
+import android.graphics.Color
 import android.os.Bundle
-import android.widget.*
+import android.widget.Button
+import android.widget.CheckBox
+import android.widget.EditText
+import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.cloud9.gridsync.network.TabletServerManager
 
@@ -26,10 +31,6 @@ class SendPlayActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_send_play)
 
-        // Start server (IMPORTANT)
-        TabletServerManager.start(applicationContext)
-
-        // UI
         messageInput = findViewById(R.id.messageInput)
         sendButton = findViewById(R.id.sendButton)
 
@@ -45,91 +46,81 @@ class SendPlayActivity : AppCompatActivity() {
         checkRB = findViewById(R.id.checkRB)
         checkTE = findViewById(R.id.checkTE)
 
-        // Update status every second
         updateStatuses()
 
         sendButton.setOnClickListener {
-            sendPlay()
+            val message = messageInput.text.toString().trim()
+
+            if (message.isEmpty()) {
+                Toast.makeText(this, "Enter a message first", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            val selectedRoles = mutableSetOf<String>()
+            if (checkQB.isChecked) selectedRoles.add("QB")
+            if (checkWR1.isChecked) selectedRoles.add("WR1")
+            if (checkWR2.isChecked) selectedRoles.add("WR2")
+            if (checkRB.isChecked) selectedRoles.add("RB")
+            if (checkTE.isChecked) selectedRoles.add("TE")
+
+            if (selectedRoles.isEmpty()) {
+                Toast.makeText(this, "Select at least one role", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            val connectedRoles = TabletServerManager.getConnectedRoles()
+
+            val delivered = mutableListOf<String>()
+            val skipped = mutableListOf<String>()
+
+            for (role in selectedRoles) {
+                if (connectedRoles.contains(role)) {
+                    TabletServerManager.sendToRole(role, message)
+                    delivered.add(role)
+                } else {
+                    skipped.add(role)
+                }
+            }
+
+            val resultText = buildString {
+                if (delivered.isNotEmpty()) {
+                    append("Sent to: ${delivered.joinToString(", ")}")
+                }
+                if (skipped.isNotEmpty()) {
+                    if (isNotEmpty()) append(" | ")
+                    append("Skipped: ${skipped.joinToString(", ")} (disconnected)")
+                }
+            }
+
+            Toast.makeText(this, resultText, Toast.LENGTH_LONG).show()
+
+            messageInput.setText("")
+            updateStatuses()
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        updateStatuses()
     }
 
     private fun updateStatuses() {
-        val handler = android.os.Handler(mainLooper)
+        val connectedRoles = TabletServerManager.getConnectedRoles()
 
-        handler.post(object : Runnable {
-            override fun run() {
-
-                val connected = TabletServerManager.getConnectedRoles()
-
-                updateStatus(statusQB, connected.contains("QB"))
-                updateStatus(statusWR1, connected.contains("WR1"))
-                updateStatus(statusWR2, connected.contains("WR2"))
-                updateStatus(statusRB, connected.contains("RB"))
-                updateStatus(statusTE, connected.contains("TE"))
-
-                handler.postDelayed(this, 1000)
-            }
-        })
+        setRoleStatus(statusQB, connectedRoles.contains("QB"))
+        setRoleStatus(statusWR1, connectedRoles.contains("WR1"))
+        setRoleStatus(statusWR2, connectedRoles.contains("WR2"))
+        setRoleStatus(statusRB, connectedRoles.contains("RB"))
+        setRoleStatus(statusTE, connectedRoles.contains("TE"))
     }
 
-    private fun updateStatus(view: TextView, isConnected: Boolean) {
-        if (isConnected) {
-            view.text = "● Connected"
-            view.setTextColor(resources.getColor(android.R.color.holo_green_dark))
+    private fun setRoleStatus(textView: TextView, connected: Boolean) {
+        if (connected) {
+            textView.text = "● Connected"
+            textView.setTextColor(Color.parseColor("#2E7D32"))
         } else {
-            view.text = "○ Disconnected"
-            view.setTextColor(resources.getColor(android.R.color.holo_red_dark))
+            textView.text = "○ Disconnected"
+            textView.setTextColor(Color.parseColor("#B00020"))
         }
-    }
-
-    private fun sendPlay() {
-        val message = messageInput.text.toString().trim()
-
-        if (message.isEmpty()) {
-            toast("Enter a message")
-            return
-        }
-
-        val selected = mutableListOf<String>()
-
-        if (checkQB.isChecked) selected.add("QB")
-        if (checkWR1.isChecked) selected.add("WR1")
-        if (checkWR2.isChecked) selected.add("WR2")
-        if (checkRB.isChecked) selected.add("RB")
-        if (checkTE.isChecked) selected.add("TE")
-
-        if (selected.isEmpty()) {
-            toast("Select at least one role")
-            return
-        }
-
-        val connected = TabletServerManager.getConnectedRoles()
-
-        val sent = mutableListOf<String>()
-        val skipped = mutableListOf<String>()
-
-        for (role in selected) {
-            if (connected.contains(role)) {
-                TabletServerManager.sendToRole(role, message)
-                sent.add(role)
-            } else {
-                skipped.add(role)
-            }
-        }
-
-        val result = buildString {
-            if (sent.isNotEmpty()) {
-                append("Sent to: ${sent.joinToString(", ")}\n")
-            }
-            if (skipped.isNotEmpty()) {
-                append("Skipped (not connected): ${skipped.joinToString(", ")}")
-            }
-        }
-
-        toast(result)
-    }
-
-    private fun toast(msg: String) {
-        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
     }
 }

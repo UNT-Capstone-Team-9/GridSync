@@ -68,7 +68,7 @@ object TabletServerManager {
             try {
                 val socket = ServerSocket(SERVER_PORT)
                 serverSocket = socket
-                Log.d(TAG, "Server socket started on port ${socket.localPort}")
+                Log.d(TAG, "Server started on port ${socket.localPort}")
                 acceptLoop(socket)
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to start server", e)
@@ -83,7 +83,7 @@ object TabletServerManager {
         try {
             serverSocket?.close()
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to close server socket", e)
+            Log.e(TAG, "Error closing server", e)
         }
 
         serverSocket = null
@@ -91,8 +91,6 @@ object TabletServerManager {
         connections.values.forEach { it.close() }
         connections.clear()
         notifyListeners()
-
-        Log.d(TAG, "Server stopped")
     }
 
     fun addListener(listener: WatchListListener) {
@@ -105,16 +103,14 @@ object TabletServerManager {
     }
 
     fun getConnectedWatches(): List<ConnectedWatch> {
-        return connections.values
-            .sortedWith(compareBy<ClientConnection> { it.role == null }.thenBy { it.watchName.lowercase() })
-            .map {
-                ConnectedWatch(
-                    watchId = it.watchId,
-                    watchName = it.watchName,
-                    ipAddress = it.ipAddress,
-                    role = it.role
-                )
-            }
+        return connections.values.map {
+            ConnectedWatch(
+                watchId = it.watchId,
+                watchName = it.watchName,
+                ipAddress = it.ipAddress,
+                role = it.role
+            )
+        }
     }
 
     fun getConnectedRoles(): Set<String> {
@@ -136,13 +132,13 @@ object TabletServerManager {
                         .put("type", "role")
                         .put("role", role)
                 )
-                Log.d(TAG, "Assigned role $role to ${connection.watchName}")
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to assign role", e)
+                Log.e(TAG, "Assign role failed", e)
             }
         }.start()
     }
 
+    // ✅ CLEAN SEND (NO "Assignment" LABEL)
     fun sendToRole(role: String, message: String) {
         val connection = connections.values.firstOrNull { it.role == role } ?: return
 
@@ -152,13 +148,11 @@ object TabletServerManager {
                     connection.writer,
                     JSONObject()
                         .put("type", "play")
-                        .put("playName", "Assignment")
                         .put("assignment", message)
                         .put("role", role)
                 )
-                Log.d(TAG, "Sent message to role $role")
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to send message to role $role", e)
+                Log.e(TAG, "Send failed for role $role", e)
             }
         }.start()
     }
@@ -166,7 +160,6 @@ object TabletServerManager {
     fun sendPlayToAssigned(play: PlayMessage) {
         connections.values.forEach { connection ->
             val role = connection.role ?: return@forEach
-            if (role.isBlank()) return@forEach
 
             val assignment = play.assignments[role]
                 ?: play.assignments.values.firstOrNull()
@@ -178,14 +171,11 @@ object TabletServerManager {
                         connection.writer,
                         JSONObject()
                             .put("type", "play")
-                            .put("playName", play.playName)
                             .put("assignment", assignment)
-                            .put("imageResourceName", play.imageResourceName)
                             .put("role", role)
                     )
-                    Log.d(TAG, "Sent play '${play.playName}' to ${connection.watchName} as $role")
                 } catch (e: Exception) {
-                    Log.e(TAG, "Failed sending play to ${connection.watchName}", e)
+                    Log.e(TAG, "Send play failed", e)
                 }
             }.start()
         }
@@ -195,14 +185,9 @@ object TabletServerManager {
         while (started && !socket.isClosed) {
             try {
                 val client = socket.accept()
-                Log.d(TAG, "Client accepted from ${client.inetAddress?.hostAddress}")
-                Thread {
-                    handleClient(client)
-                }.start()
+                Thread { handleClient(client) }.start()
             } catch (e: Exception) {
-                if (started) {
-                    Log.e(TAG, "Accept loop failed", e)
-                }
+                if (started) Log.e(TAG, "Accept error", e)
             }
         }
     }
@@ -214,67 +199,44 @@ object TabletServerManager {
             val reader = BufferedReader(InputStreamReader(socket.getInputStream()))
             val writer = BufferedWriter(OutputStreamWriter(socket.getOutputStream()))
 
-            val helloLine = reader.readLine() ?: run {
-                socket.close()
-                return
-            }
-
-            Log.d(TAG, "Received hello line $helloLine")
-
-            val hello = JSONObject(helloLine)
+            val hello = JSONObject(reader.readLine() ?: return)
 
             if (hello.optString("type") != "hello") {
-                sendJson(
-                    writer,
-                    JSONObject()
-                        .put("type", "reject")
-                        .put("reason", "bad_hello")
-                )
                 socket.close()
                 return
             }
 
-            val pairCode = hello.optString("pairCode")
-            if (pairCode != PAIR_CODE) {
-                sendJson(
-                    writer,
-                    JSONObject()
-                        .put("type", "reject")
-                        .put("reason", "bad_code")
-                )
+            if (hello.optString("pairCode") != PAIR_CODE) {
                 socket.close()
                 return
             }
 
             watchId = hello.optString("watchId")
-            val watchName = hello.optString("watchName").ifBlank { "Unknown Watch" }
-            val ipAddress = socket.inetAddress?.hostAddress ?: "Unknown IP"
-
-            connections[watchId]?.close()
+            val watchName = hello.optString("watchName", "Watch")
+            val ip = socket.inetAddress?.hostAddress ?: ""
 
             val savedRole = getAssignedRole(watchId)
 
             val connection = ClientConnection(
-                socket = socket,
-                reader = reader,
-                writer = writer,
-                watchId = watchId,
-                watchName = watchName,
-                ipAddress = ipAddress,
-                role = savedRole
+                socket,
+                reader,
+                writer,
+                watchId,
+                watchName,
+                ip,
+                savedRole
             )
 
             connections[watchId] = connection
-            Log.d(TAG, "Watch connected $watchName $ipAddress savedRole=$savedRole")
 
             sendJson(
                 writer,
                 JSONObject()
                     .put("type", "accepted")
                     .put("watchId", watchId)
-                    .put("pairCode", PAIR_CODE)
             )
 
+            // Restore role automatically
             if (!savedRole.isNullOrBlank()) {
                 sendJson(
                     writer,
@@ -287,47 +249,30 @@ object TabletServerManager {
             notifyListeners()
 
             while (started && !socket.isClosed) {
-                val line = reader.readLine() ?: break
-                val message = JSONObject(line)
+                val msg = JSONObject(reader.readLine() ?: break)
 
-                when (message.optString("type")) {
-                    "ping" -> {
-                        sendJson(
-                            writer,
-                            JSONObject().put("type", "pong")
-                        )
-                    }
-
-                    "disconnect" -> {
-                        break
-                    }
+                if (msg.optString("type") == "ping") {
+                    sendJson(writer, JSONObject().put("type", "pong"))
                 }
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "Client handler failed", e)
-        } finally {
-            if (watchId != null) {
-                connections.remove(watchId)
-                notifyListeners()
-            }
 
-            try {
-                socket.close()
-            } catch (_: Exception) {
-            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Client error", e)
+        } finally {
+            watchId?.let { connections.remove(it) }
+            notifyListeners()
+            try { socket.close() } catch (_: Exception) {}
         }
     }
 
     private fun saveAssignedRole(watchId: String, role: String) {
-        val ctx = appContext ?: return
-        val prefs = ctx.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        prefs.edit().putString(KEY_PREFIX + watchId, role).apply()
+        val prefs = appContext?.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs?.edit()?.putString(KEY_PREFIX + watchId, role)?.apply()
     }
 
     private fun getAssignedRole(watchId: String): String? {
-        val ctx = appContext ?: return null
-        val prefs = ctx.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        return prefs.getString(KEY_PREFIX + watchId, null)
+        val prefs = appContext?.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs?.getString(KEY_PREFIX + watchId, null)
     }
 
     private fun notifyListeners() {
