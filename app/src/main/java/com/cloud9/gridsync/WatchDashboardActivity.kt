@@ -2,15 +2,20 @@ package com.cloud9.gridsync
 
 import android.content.Context
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.cloud9.gridsync.network.WatchClientManager
 import kotlin.random.Random
 
-class WatchDashboardActivity : AppCompatActivity(), WatchClientManager.WatchMessageListener {
+class WatchDashboardActivity : AppCompatActivity(),
+    WatchClientManager.WatchMessageListener {
 
     private lateinit var playText: TextView
     private lateinit var roleText: TextView
+
+    private val handler = Handler(Looper.getMainLooper())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,10 +34,10 @@ class WatchDashboardActivity : AppCompatActivity(), WatchClientManager.WatchMess
     }
 
     override fun onConnectionChanged(isConnected: Boolean) {
-        playText.text = if (isConnected) {
-            "Ready for assignment"
+        if (isConnected) {
+            playText.text = "Ready for assignment"
         } else {
-            "Waiting for connection..."
+            playText.text = "Connection Lost. Waiting for connection..."
         }
     }
 
@@ -42,11 +47,16 @@ class WatchDashboardActivity : AppCompatActivity(), WatchClientManager.WatchMess
 
     override fun onPlayReceived(playMessage: String) {
         playText.text = playMessage
+
+        handler.postDelayed({
+            playText.text = "Ready for assignment"
+        }, 15000)
     }
 
     override fun onDestroy() {
         super.onDestroy()
         WatchClientManager.clearListener()
+        handler.removeCallbacksAndMessages(null)
     }
 
     private fun getOrCreateWatchId(): String {

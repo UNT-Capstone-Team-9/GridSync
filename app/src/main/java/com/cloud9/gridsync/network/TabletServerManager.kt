@@ -17,9 +17,11 @@ import java.util.concurrent.CopyOnWriteArraySet
 object TabletServerManager {
 
     private const val TAG = "TabletServerManager"
-
     const val PAIR_CODE = "CLOUD9"
     const val SERVER_PORT = 5001
+
+    private const val PREFS_NAME = "tablet_role_assignments"
+    private const val KEY_PREFIX = "watch_role_"
 
     interface WatchListListener {
         fun onWatchListChanged(watches: List<ConnectedWatch>)
@@ -50,6 +52,7 @@ object TabletServerManager {
     private var started = false
 
     private var serverSocket: ServerSocket? = null
+    private var appContext: Context? = null
 
     fun start(context: Context) {
         if (started) {
@@ -58,6 +61,7 @@ object TabletServerManager {
             return
         }
 
+        appContext = context.applicationContext
         started = true
 
         Thread {
@@ -113,7 +117,13 @@ object TabletServerManager {
             }
     }
 
+    fun getConnectedRoles(): Set<String> {
+        return connections.values.mapNotNull { it.role }.toSet()
+    }
+
     fun assignRole(watchId: String, role: String) {
+        saveAssignedRole(watchId, role)
+
         val connection = connections[watchId] ?: return
         connection.role = role
         notifyListeners()
@@ -133,11 +143,35 @@ object TabletServerManager {
         }.start()
     }
 
+    fun sendToRole(role: String, message: String) {
+        val connection = connections.values.firstOrNull { it.role == role } ?: return
+
+        Thread {
+            try {
+                sendJson(
+                    connection.writer,
+                    JSONObject()
+                        .put("type", "play")
+                        .put("playName", "Assignment")
+                        .put("assignment", message)
+                        .put("role", role)
+                )
+                Log.d(TAG, "Sent message to role $role")
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to send message to role $role", e)
+            }
+        }.start()
+    }
+
     fun sendPlayToAssigned(play: PlayMessage) {
         connections.values.forEach { connection ->
             val role = connection.role ?: return@forEach
             if (role.isBlank()) return@forEach
-            val assignment = play.assignments[role] ?: play.assignments.values.firstOrNull() ?: ""
+
+            val assignment = play.assignments[role]
+                ?: play.assignments.values.firstOrNull()
+                ?: ""
+
             Thread {
                 try {
                     sendJson(
@@ -218,17 +252,20 @@ object TabletServerManager {
 
             connections[watchId]?.close()
 
+            val savedRole = getAssignedRole(watchId)
+
             val connection = ClientConnection(
                 socket = socket,
                 reader = reader,
                 writer = writer,
                 watchId = watchId,
                 watchName = watchName,
-                ipAddress = ipAddress
+                ipAddress = ipAddress,
+                role = savedRole
             )
 
             connections[watchId] = connection
-            Log.d(TAG, "Watch connected $watchName $ipAddress")
+            Log.d(TAG, "Watch connected $watchName $ipAddress savedRole=$savedRole")
 
             sendJson(
                 writer,
@@ -237,6 +274,15 @@ object TabletServerManager {
                     .put("watchId", watchId)
                     .put("pairCode", PAIR_CODE)
             )
+
+            if (!savedRole.isNullOrBlank()) {
+                sendJson(
+                    writer,
+                    JSONObject()
+                        .put("type", "role")
+                        .put("role", savedRole)
+                )
+            }
 
             notifyListeners()
 
@@ -270,6 +316,18 @@ object TabletServerManager {
             } catch (_: Exception) {
             }
         }
+    }
+
+    private fun saveAssignedRole(watchId: String, role: String) {
+        val ctx = appContext ?: return
+        val prefs = ctx.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putString(KEY_PREFIX + watchId, role).apply()
+    }
+
+    private fun getAssignedRole(watchId: String): String? {
+        val ctx = appContext ?: return null
+        val prefs = ctx.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getString(KEY_PREFIX + watchId, null)
     }
 
     private fun notifyListeners() {
