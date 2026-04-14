@@ -20,12 +20,24 @@ class SendPlayActivity : AppCompatActivity() {
     private lateinit var statusWR2: TextView
     private lateinit var statusRB: TextView
     private lateinit var statusTE: TextView
+    private lateinit var statusLT: TextView
+    private lateinit var statusLG: TextView
+    private lateinit var statusC: TextView
+    private lateinit var statusRG: TextView
+    private lateinit var statusRT: TextView
+    private lateinit var statusCB: TextView
 
     private lateinit var checkQB: CheckBox
     private lateinit var checkWR1: CheckBox
     private lateinit var checkWR2: CheckBox
     private lateinit var checkRB: CheckBox
     private lateinit var checkTE: CheckBox
+    private lateinit var checkLT: CheckBox
+    private lateinit var checkLG: CheckBox
+    private lateinit var checkC: CheckBox
+    private lateinit var checkRG: CheckBox
+    private lateinit var checkRT: CheckBox
+    private lateinit var checkCB: CheckBox
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -39,12 +51,24 @@ class SendPlayActivity : AppCompatActivity() {
         statusWR2 = findViewById(R.id.statusWR2)
         statusRB = findViewById(R.id.statusRB)
         statusTE = findViewById(R.id.statusTE)
+        statusLT = findViewById(R.id.statusLT)
+        statusLG = findViewById(R.id.statusLG)
+        statusC = findViewById(R.id.statusC)
+        statusRG = findViewById(R.id.statusRG)
+        statusRT = findViewById(R.id.statusRT)
+        statusCB = findViewById(R.id.statusCB)
 
         checkQB = findViewById(R.id.checkQB)
         checkWR1 = findViewById(R.id.checkWR1)
         checkWR2 = findViewById(R.id.checkWR2)
         checkRB = findViewById(R.id.checkRB)
         checkTE = findViewById(R.id.checkTE)
+        checkLT = findViewById(R.id.checkLT)
+        checkLG = findViewById(R.id.checkLG)
+        checkC = findViewById(R.id.checkC)
+        checkRG = findViewById(R.id.checkRG)
+        checkRT = findViewById(R.id.checkRT)
+        checkCB = findViewById(R.id.checkCB)
 
         updateStatuses()
 
@@ -62,6 +86,12 @@ class SendPlayActivity : AppCompatActivity() {
             if (checkWR2.isChecked) selectedRoles.add("WR2")
             if (checkRB.isChecked) selectedRoles.add("RB")
             if (checkTE.isChecked) selectedRoles.add("TE")
+            if (checkLT.isChecked) selectedRoles.add("LT")
+            if (checkLG.isChecked) selectedRoles.add("LG")
+            if (checkC.isChecked) selectedRoles.add("C")
+            if (checkRG.isChecked) selectedRoles.add("RG")
+            if (checkRT.isChecked) selectedRoles.add("RT")
+            if (checkCB.isChecked) selectedRoles.add("CB")
 
             if (selectedRoles.isEmpty()) {
                 Toast.makeText(this, "Select at least one role", Toast.LENGTH_SHORT).show()
@@ -69,7 +99,6 @@ class SendPlayActivity : AppCompatActivity() {
             }
 
             val connectedRoles = TabletServerManager.getConnectedRoles()
-
             val delivered = mutableListOf<String>()
             val skipped = mutableListOf<String>()
 
@@ -93,7 +122,6 @@ class SendPlayActivity : AppCompatActivity() {
             }
 
             Toast.makeText(this, resultText, Toast.LENGTH_LONG).show()
-
             messageInput.setText("")
             updateStatuses()
         }
@@ -112,14 +140,20 @@ class SendPlayActivity : AppCompatActivity() {
         setRoleStatus(statusWR2, connectedRoles.contains("WR2"))
         setRoleStatus(statusRB, connectedRoles.contains("RB"))
         setRoleStatus(statusTE, connectedRoles.contains("TE"))
+        setRoleStatus(statusLT, connectedRoles.contains("LT"))
+        setRoleStatus(statusLG, connectedRoles.contains("LG"))
+        setRoleStatus(statusC, connectedRoles.contains("C"))
+        setRoleStatus(statusRG, connectedRoles.contains("RG"))
+        setRoleStatus(statusRT, connectedRoles.contains("RT"))
+        setRoleStatus(statusCB, connectedRoles.contains("CB"))
     }
 
     private fun setRoleStatus(textView: TextView, connected: Boolean) {
         if (connected) {
-            textView.text = "● Connected"
+            textView.text = "• Connected"
             textView.setTextColor(Color.parseColor("#2E7D32"))
         } else {
-            textView.text = "○ Disconnected"
+            textView.text = "◦ Disconnected"
             textView.setTextColor(Color.parseColor("#B00020"))
         }
     }

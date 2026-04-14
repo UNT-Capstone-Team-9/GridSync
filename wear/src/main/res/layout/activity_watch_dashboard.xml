@@ -1,31 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#000000"
-    android:orientation="vertical"
-    android:padding="16dp">
+    android:background="#000000">
 
+    <!-- Role at top -->
     <TextView
         android:id="@+id/playerRoleText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_gravity="top|center_horizontal"
+        android:layout_marginTop="18dp"
         android:gravity="center"
-        android:text="Unassigned"
+        android:text="QB"
         android:textColor="#00FF88"
-        android:textSize="20sp"
+        android:textSize="32sp"
         android:textStyle="bold" />
 
+    <!-- Message always centered -->
     <TextView
         android:id="@+id/playText"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
         android:gravity="center"
-        android:paddingTop="20dp"
-        android:text="Scanning for tablet..."
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:text="Ready for assignment"
         android:textColor="#FFFFFF"
-        android:textSize="24sp"
-        android:textStyle="bold" />
+        android:textSize="34sp"
+        android:textStyle="bold"
+        android:maxLines="4" />
 
-</LinearLayout>
+</FrameLayout>

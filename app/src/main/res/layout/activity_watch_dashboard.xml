@@ -1,34 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="#000000"
-    android:gravity="center"
-    android:padding="12dp">
+    android:background="#000000">
 
-    <!-- ROLE (Top but centered nicely) -->
     <TextView
         android:id="@+id/playerRoleText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_gravity="top|center_horizontal"
+        android:layout_marginTop="16dp"
         android:gravity="center"
         android:text="QB"
         android:textColor="#00FF88"
-        android:textSize="40sp"
-        android:textStyle="bold"
-        android:layout_marginBottom="16dp" />
+        android:textSize="28sp"
+        android:textStyle="bold" />
 
-    <!-- MESSAGE (CENTERED PERFECTLY) -->
     <TextView
         android:id="@+id/playText"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:gravity="center"
         android:text="Ready for assignment"
         android:textColor="#FFFFFF"
-        android:textSize="60sp"
+        android:textSize="42sp"
         android:textStyle="bold"
-        android:lineSpacingExtra="8dp" />
+        android:padding="20dp" />
 
-</LinearLayout>
+</FrameLayout>

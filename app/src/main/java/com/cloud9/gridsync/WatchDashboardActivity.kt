@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.view.Gravity
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.cloud9.gridsync.network.WatchClientManager
@@ -17,6 +18,10 @@ class WatchDashboardActivity : AppCompatActivity(),
 
     private val handler = Handler(Looper.getMainLooper())
 
+    private val resetRunnable = Runnable {
+        showCenteredMessage("Ready for assignment")
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_watch_dashboard)
@@ -27,17 +32,19 @@ class WatchDashboardActivity : AppCompatActivity(),
         val watchId = getOrCreateWatchId()
 
         roleText.text = "Unassigned"
-        playText.text = "Scanning for tablet..."
+        showCenteredMessage("Scanning for tablet...")
 
         WatchClientManager.setListener(this)
         WatchClientManager.connect(applicationContext, watchId)
     }
 
     override fun onConnectionChanged(isConnected: Boolean) {
+        handler.removeCallbacks(resetRunnable)
+
         if (isConnected) {
-            playText.text = "Ready for assignment"
+            showCenteredMessage("Ready for assignment")
         } else {
-            playText.text = "Connection Lost. Waiting for connection..."
+            showCenteredMessage("Waiting for connection...")
         }
     }
 
@@ -46,17 +53,21 @@ class WatchDashboardActivity : AppCompatActivity(),
     }
 
     override fun onPlayReceived(playMessage: String) {
-        playText.text = playMessage
-
-        handler.postDelayed({
-            playText.text = "Ready for assignment"
-        }, 15000)
+        handler.removeCallbacks(resetRunnable)
+        showCenteredMessage(playMessage)
+        handler.postDelayed(resetRunnable, 15000)
     }
 
     override fun onDestroy() {
         super.onDestroy()
         WatchClientManager.clearListener()
         handler.removeCallbacksAndMessages(null)
+    }
+
+    private fun showCenteredMessage(text: String) {
+        playText.text = text.trim()
+        playText.textSize = 42f
+        playText.gravity = Gravity.CENTER
     }
 
     private fun getOrCreateWatchId(): String {
@@ -68,6 +79,6 @@ class WatchDashboardActivity : AppCompatActivity(),
             prefs.edit().putString("watch_id", id).apply()
         }
 
-        return id
+        return id ?: "00"
     }
 }
