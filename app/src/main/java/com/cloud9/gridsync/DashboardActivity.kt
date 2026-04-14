@@ -5,6 +5,7 @@ import android.os.Build
 import android.os.Bundle
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.cloud9.gridsync.network.TabletServerManager
 
@@ -24,21 +25,30 @@ class DashboardActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // WATCH MODE → redirect immediately
         if (isLokmatWatch()) {
             startActivity(Intent(this, WatchDashboardActivity::class.java))
             finish()
             return
         }
 
+        // TABLET MODE
         setContentView(R.layout.activity_dashboard)
+
+        // Start server
         TabletServerManager.start(applicationContext)
 
+        // DEBUG: show toast
+        Toast.makeText(this, "Tablet server started", Toast.LENGTH_SHORT).show()
+
+        // UI references
         val settingsIcon = findViewById<ImageView>(R.id.settingsIcon)
         val assignWatchesCard = findViewById<LinearLayout>(R.id.assignWatchesCard)
         val sendPlayCard = findViewById<LinearLayout>(R.id.sendPlayCard)
         val createPlayCard = findViewById<LinearLayout>(R.id.createPlayCard)
         val playLibraryCard = findViewById<LinearLayout>(R.id.playLibraryCard)
 
+        // Navigation
         createPlayCard.setOnClickListener {
             startActivity(Intent(this, CreatePlayActivity::class.java))
         }
