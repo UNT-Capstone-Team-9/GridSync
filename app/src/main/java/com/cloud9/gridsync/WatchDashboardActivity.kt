@@ -4,8 +4,7 @@ import android.content.Context
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.view.View
-import android.widget.LinearLayout
+import android.view.Gravity
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.cloud9.gridsync.network.PointData
@@ -46,6 +45,10 @@ class WatchDashboardActivity : AppCompatActivity(),
         showWaitingState()
     }
 
+    private val resetRunnable = Runnable {
+        showCenteredMessage("Ready for assignment")
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_watch_dashboard)
@@ -69,21 +72,20 @@ class WatchDashboardActivity : AppCompatActivity(),
 
         val watchId = getOrCreateWatchId()
 
-        watchRouteView.setRole("Unassigned")
-        watchRouteView.setMovements(emptyMap())
-        showScanningState()
+        roleText.text = "Unassigned"
+        showCenteredMessage("Scanning for tablet...")
 
         WatchClientManager.setListener(this)
         WatchClientManager.connect(applicationContext, watchId)
     }
 
     override fun onConnectionChanged(isConnected: Boolean) {
-        mainHandler.removeCallbacks(resetToWaitingRunnable)
+        handler.removeCallbacks(resetRunnable)
 
         if (isConnected) {
-            showWaitingState()
+            showCenteredMessage("Ready for assignment")
         } else {
-            showScanningState()
+            showCenteredMessage("Waiting for connection...")
         }
     }
 
@@ -95,37 +97,10 @@ class WatchDashboardActivity : AppCompatActivity(),
         watchRouteView.setRole(role)
     }
 
-    override fun onPlayReceived(
-        playName: String,
-        playTextMessage: String,
-        movements: Map<String, List<PointData>>
-    ) {
-        mainHandler.removeCallbacks(resetToWaitingRunnable)
-
-        waitingContainer.visibility = View.GONE
-        textMessageContainer.visibility = View.GONE
-        playContainer.visibility = View.VISIBLE
-
-        playNameText.text = if (playName.isBlank()) "Incoming Play" else playName
-        playText.text = playTextMessage
-        watchRouteView.setMovements(movements)
-
-        mainHandler.postDelayed(resetToWaitingRunnable, PLAY_DISPLAY_DURATION_MS)
-    }
-
-    override fun onTextMessageReceived(role: String, message: String) {
-        mainHandler.removeCallbacks(resetToWaitingRunnable)
-
-        waitingContainer.visibility = View.GONE
-        playContainer.visibility = View.GONE
-        textMessageContainer.visibility = View.VISIBLE
-
-        messageRoleText.text = role
-        messageTitleText.text = "Coach Message"
-        messageBodyText.text = message
-        watchRouteView.setMovements(emptyMap())
-
-        mainHandler.postDelayed(resetToWaitingRunnable, MESSAGE_DISPLAY_DURATION_MS)
+    override fun onPlayReceived(playMessage: String) {
+        handler.removeCallbacks(resetRunnable)
+        showCenteredMessage(playMessage)
+        handler.postDelayed(resetRunnable, 15000)
     }
 
     override fun onDestroy() {
@@ -156,6 +131,12 @@ class WatchDashboardActivity : AppCompatActivity(),
         watchRouteView.setMovements(emptyMap())
     }
 
+    private fun showCenteredMessage(text: String) {
+        playText.text = text.trim()
+        playText.textSize = 42f
+        playText.gravity = Gravity.CENTER
+    }
+
     private fun getOrCreateWatchId(): String {
         val prefs = getSharedPreferences("watch_prefs", Context.MODE_PRIVATE)
         var id = prefs.getString("watch_id", null)
@@ -165,6 +146,6 @@ class WatchDashboardActivity : AppCompatActivity(),
             prefs.edit().putString("watch_id", id).apply()
         }
 
-        return id
+        return id ?: "00"
     }
 }

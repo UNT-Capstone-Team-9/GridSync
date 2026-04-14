@@ -1,77 +1,84 @@
 package com.cloud9.gridsync
 
-import android.app.Activity
+import android.content.Context
 import android.os.Bundle
-import android.widget.ImageView
+import android.os.Handler
+import android.os.Looper
+import android.view.Gravity
 import android.widget.TextView
-import android.widget.Toast
-import com.cloud9.gridsync.network.PlayMessage
+import androidx.appcompat.app.AppCompatActivity
 import com.cloud9.gridsync.network.WatchClientManager
+import kotlin.random.Random
 
-class WatchDashboardActivity : Activity() {
+class WatchDashboardActivity : AppCompatActivity(),
+    WatchClientManager.WatchMessageListener {
 
-    private lateinit var playTitle: TextView
-    private lateinit var connectMessage: TextView
-    private lateinit var playImage: ImageView
+    private lateinit var playText: TextView
+    private lateinit var roleText: TextView
 
-    private val watchListener = object : WatchClientManager.Listener {
-        override fun onStatusChanged(status: String) {
-            if (playTitle.text.toString().isBlank() || playTitle.text.toString() == "Waiting for Coach...") {
-                playTitle.text = "GridSync"
-            }
-            connectMessage.text = status
-        }
+    private val handler = Handler(Looper.getMainLooper())
 
-        override fun onRoleChanged(role: String?) {
-            connectMessage.text = if (role.isNullOrBlank()) {
-                "Connected"
-            } else {
-                "Connected as $role"
-            }
-        }
-
-        override fun onPlayReceived(play: PlayMessage) {
-            playTitle.text = if (play.role.isNotBlank()) {
-                "${play.playName}  •  ${play.role}"
-            } else {
-                play.playName
-            }
-            connectMessage.text = play.assignment
-
-            if (play.imageResourceName.isNotBlank()) {
-                val resId = resources.getIdentifier(
-                    play.imageResourceName,
-                    "drawable",
-                    packageName
-                )
-
-                if (resId != 0) {
-                    playImage.setImageResource(resId)
-                }
-            }
-        }
+    private val resetRunnable = Runnable {
+        showCenteredMessage("Ready for assignment")
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_watch_dashboard)
 
-        playTitle = findViewById(R.id.playTitle)
-        connectMessage = findViewById(R.id.connectMessage)
-        playImage = findViewById(R.id.playImage)
+        playText = findViewById(R.id.playText)
+        roleText = findViewById(R.id.playerRoleText)
 
-        playTitle.text = "GridSync"
-        connectMessage.text = "Searching for tablet"
+        val watchId = getOrCreateWatchId()
 
-        // Visual confirmation that this code is running
-        Toast.makeText(this, "Watch client starting", Toast.LENGTH_SHORT).show()
+        roleText.text = "Unassigned"
+        showCenteredMessage("Scanning for tablet...")
 
-        // Trigger the networking logic
-        WatchClientManager.start(applicationContext, watchListener)
+        WatchClientManager.setListener(this)
+        WatchClientManager.connect(applicationContext, watchId)
+    }
+
+    override fun onConnectionChanged(isConnected: Boolean) {
+        handler.removeCallbacks(resetRunnable)
+
+        if (isConnected) {
+            showCenteredMessage("Ready for assignment")
+        } else {
+            showCenteredMessage("Waiting for connection...")
+        }
+    }
+
+    override fun onRoleChanged(role: String) {
+        roleText.text = role
+    }
+
+    override fun onPlayReceived(playMessage: String) {
+        handler.removeCallbacks(resetRunnable)
+        showCenteredMessage(playMessage)
+        handler.postDelayed(resetRunnable, 15000)
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        WatchClientManager.stop()
+        WatchClientManager.clearListener()
+        handler.removeCallbacksAndMessages(null)
+    }
+
+    private fun showCenteredMessage(text: String) {
+        playText.text = text.trim()
+        playText.textSize = 42f
+        playText.gravity = Gravity.CENTER
+    }
+
+    private fun getOrCreateWatchId(): String {
+        val prefs = getSharedPreferences("watch_prefs", Context.MODE_PRIVATE)
+        var id = prefs.getString("watch_id", null)
+
+        if (id == null) {
+            id = String.format("%02d", Random.nextInt(0, 100))
+            prefs.edit().putString("watch_id", id).apply()
+        }
+
+        return id ?: "00"
     }
 }
