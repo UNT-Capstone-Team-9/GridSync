@@ -52,6 +52,7 @@ class WatchDashboardActivity : AppCompatActivity(),
         roleText.text = role
     }
 
+    // Displays the play information received from the coach's tablet on the assigned player's watch.
     override fun onPlayReceived(playMessage: String) {
         handler.removeCallbacks(resetRunnable)
         showCenteredMessage(playMessage)
