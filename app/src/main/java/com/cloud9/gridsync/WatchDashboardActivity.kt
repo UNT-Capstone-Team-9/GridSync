@@ -47,7 +47,7 @@ class WatchDashboardActivity : AppCompatActivity(),
             showCenteredMessage("Waiting for connection...")
         }
     }
-
+    //Display Role
     override fun onRoleChanged(role: String) {
         roleText.text = role
     }
@@ -56,7 +56,7 @@ class WatchDashboardActivity : AppCompatActivity(),
     override fun onPlayReceived(playMessage: String) {
         handler.removeCallbacks(resetRunnable)
         showCenteredMessage(playMessage)
-        handler.postDelayed(resetRunnable, 15000)
+        handler.postDelayed(resetRunnable, 15000
     }
 
     override fun onDestroy() {
