@@ -88,7 +88,7 @@ class WatchDashboardActivity : AppCompatActivity(),
             showCenteredMessage("Waiting for connection...")
         }
     }
-
+    //Display Role
     override fun onRoleChanged(role: String) {
         currentRole = role
         waitingRoleText.text = role
@@ -97,10 +97,11 @@ class WatchDashboardActivity : AppCompatActivity(),
         watchRouteView.setRole(role)
     }
 
+    // Displays the play information received from the coach's tablet on the assigned player's watch.
     override fun onPlayReceived(playMessage: String) {
         handler.removeCallbacks(resetRunnable)
         showCenteredMessage(playMessage)
-        handler.postDelayed(resetRunnable, 15000)
+        handler.postDelayed(resetRunnable, 15000
     }
 
     override fun onDestroy() {
