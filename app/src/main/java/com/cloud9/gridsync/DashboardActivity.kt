@@ -1,6 +1,7 @@
 package com.cloud9.gridsync
 
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.Typeface
 import android.os.Build
@@ -46,7 +47,7 @@ class DashboardActivity : AppCompatActivity(),
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        if (isLokmatWatch()) {
+        if (isLokmatWatch() || packageManager.hasSystemFeature(PackageManager.FEATURE_WATCH)) {
             startActivity(Intent(this, WatchDashboardActivity::class.java))
             finish()
             return

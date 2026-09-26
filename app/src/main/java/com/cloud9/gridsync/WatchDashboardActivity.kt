@@ -8,6 +8,7 @@ import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import com.cloud9.gridsync.network.PlayerPosition
 import com.cloud9.gridsync.network.PointData
 import com.cloud9.gridsync.network.WatchClientManager
 import com.cloud9.gridsync.ui.WatchRouteView
@@ -99,7 +100,9 @@ class WatchDashboardActivity : AppCompatActivity(),
     override fun onPlayReceived(
         playName: String,
         playTextMessage: String,
-        movements: Map<String, List<PointData>>
+        movements: Map<String, List<PointData>>,
+        players: List<PlayerPosition>,
+        isFullPlay: Boolean
     ) {
         mainHandler.removeCallbacks(resetToWaitingRunnable)
 
@@ -109,7 +112,7 @@ class WatchDashboardActivity : AppCompatActivity(),
 
         playNameText.text = if (playName.isBlank()) "Incoming Play" else playName
         playText.text = playTextMessage
-        watchRouteView.setMovements(movements)
+        watchRouteView.setPlay(movements, players, isFullPlay)
 
         mainHandler.postDelayed(resetToWaitingRunnable, PLAY_DISPLAY_DURATION_MS)
     }

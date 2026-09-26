@@ -29,7 +29,9 @@ object WatchClientManager {
         fun onPlayReceived(
             playName: String,
             playTextMessage: String,
-            movements: Map<String, List<PointData>>
+            movements: Map<String, List<PointData>>,
+            players: List<PlayerPosition>,
+            isFullPlay: Boolean
         )
         fun onTextMessageReceived(role: String, message: String)
     }
@@ -185,9 +187,22 @@ object WatchClientManager {
                                 emptyMap()
                             }
 
+                            // Older tablets send neither field, which falls back to role specific with no players.
+                            val playersJson = message.optString("players", "[]")
+                            val playersType = object : TypeToken<List<PlayerPosition>>() {}.type
+                            val players: List<PlayerPosition> = try {
+                                gson.fromJson<List<PlayerPosition>>(playersJson, playersType)
+                                    ?.filterNotNull()
+                                    ?: emptyList()
+                            } catch (_: Exception) {
+                                emptyList()
+                            }
+
+                            val isFullPlay = message.optString("displayType") == PlayFormation.DISPLAY_FULL_PLAY
+
                             postRole(role)
                             sendDeliveryAck(role, "play", playName)
-                            postPlay(playName, assignment, movements)
+                            postPlay(playName, assignment, movements, players, isFullPlay)
                         }
 
                         "text_message" -> {
@@ -266,10 +281,12 @@ object WatchClientManager {
     private fun postPlay(
         playName: String,
         playTextMessage: String,
-        movements: Map<String, List<PointData>>
+        movements: Map<String, List<PointData>>,
+        players: List<PlayerPosition>,
+        isFullPlay: Boolean
     ) {
         mainHandler.post {
-            listener?.onPlayReceived(playName, playTextMessage, movements)
+            listener?.onPlayReceived(playName, playTextMessage, movements, players, isFullPlay)
         }
     }
 

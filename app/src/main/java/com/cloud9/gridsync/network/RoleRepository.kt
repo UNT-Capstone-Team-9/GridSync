@@ -7,18 +7,26 @@ object RoleRepository {
     private const val PREFS_NAME = "gridsync_roles"
     private const val KEY_ROLES = "roles_csv"
 
+    // Every player label the play designer can put on the field, so each one can have a watch.
+    // Duplicate positions use distinct labels (TE and TE2, RB and RB2).
     private val defaultRoles = listOf(
         "QB",
         "RB",
+        "RB2",
+        "FB",
+        "HB",
         "WR1",
         "WR2",
+        "WR3",
+        "WR4",
         "TE",
+        "TE2",
         "LT",
         "LG",
         "C",
         "RG",
         "RT",
-        "FB"
+        "OL"
     )
 
     fun getRoles(context: Context): MutableList<String> {

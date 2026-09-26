@@ -9,9 +9,11 @@ import android.graphics.Path
 import android.graphics.RectF
 import android.util.AttributeSet
 import android.view.View
+import com.cloud9.gridsync.network.PlayerPosition
 import com.cloud9.gridsync.network.PointData
 import kotlin.math.atan2
 import kotlin.math.cos
+import kotlin.math.min
 import kotlin.math.sin
 
 class WatchRouteView(context: Context, attrs: AttributeSet) : View(context, attrs) {
@@ -21,6 +23,30 @@ class WatchRouteView(context: Context, attrs: AttributeSet) : View(context, attr
 
     private var currentRole: String = "Unassigned"
     private var movements: Map<String, List<PointData>> = emptyMap()
+
+    // Normalized positions from the tablet. A full play (QB) has all 11 players, a role specific
+    // play has only the wearer's own marker.
+    private var players: List<PlayerPosition> = emptyList()
+    private var isFullPlay = false
+
+    private val playerFillPaint = Paint().apply {
+        color = Color.rgb(20, 33, 61)
+        style = Paint.Style.FILL
+        isAntiAlias = true
+    }
+
+    private val ownPlayerFillPaint = Paint().apply {
+        color = Color.rgb(0, 200, 80)
+        style = Paint.Style.FILL
+        isAntiAlias = true
+    }
+
+    private val playerLabelPaint = Paint().apply {
+        color = Color.WHITE
+        textAlign = Paint.Align.CENTER
+        isAntiAlias = true
+        isFakeBoldText = true
+    }
 
     private val boardFillPaint = Paint().apply {
         color = Color.rgb(245, 245, 240)
@@ -102,6 +128,19 @@ class WatchRouteView(context: Context, attrs: AttributeSet) : View(context, attr
 
     fun setMovements(newMovements: Map<String, List<PointData>>) {
         movements = newMovements
+        players = emptyList()
+        isFullPlay = false
+        invalidate()
+    }
+
+    fun setPlay(
+        newMovements: Map<String, List<PointData>>,
+        newPlayers: List<PlayerPosition>,
+        fullPlay: Boolean
+    ) {
+        movements = newMovements
+        players = newPlayers.filter { it.isActive && it.x != null && it.y != null }
+        isFullPlay = fullPlay
         invalidate()
     }
 
@@ -109,6 +148,34 @@ class WatchRouteView(context: Context, attrs: AttributeSet) : View(context, attr
         super.onDraw(canvas)
         drawBoard(canvas)
         drawRoutes(canvas)
+        drawPlayers(canvas)
+    }
+
+    private fun drawPlayers(canvas: Canvas) {
+        if (players.isEmpty()) return
+
+        // The full play has 11 markers on a small screen, so they are smaller than a single marker.
+        val base = min(contentRect.width(), contentRect.height())
+        val radius = if (isFullPlay) base * 0.045f else base * 0.07f
+        playerLabelPaint.textSize = radius * 0.8f
+
+        players.forEach { player ->
+            val cx = contentRect.left + player.x!!.coerceIn(0f, 1f) * contentRect.width()
+            val cy = contentRect.top + player.y!!.coerceIn(0f, 1f) * contentRect.height()
+            val isOwn = player.displayLabel.equals(currentRole, ignoreCase = true)
+
+            canvas.drawCircle(cx, cy, radius, if (isOwn) ownPlayerFillPaint else playerFillPaint)
+
+            val label = player.displayLabel
+            val maxWidth = radius * 1.7f
+            val measured = playerLabelPaint.measureText(label)
+            val originalSize = playerLabelPaint.textSize
+            if (measured > maxWidth) playerLabelPaint.textSize = originalSize * maxWidth / measured
+
+            val baseline = cy - (playerLabelPaint.descent() + playerLabelPaint.ascent()) / 2f
+            canvas.drawText(label, cx, baseline, playerLabelPaint)
+            playerLabelPaint.textSize = originalSize
+        }
     }
 
     private fun drawBoard(canvas: Canvas) {
@@ -213,7 +280,9 @@ class WatchRouteView(context: Context, attrs: AttributeSet) : View(context, attr
             canvas.drawPath(path, paint)
             canvas.drawCircle(firstX, firstY, dp(4f), startPointPaint)
             drawArrowHead(canvas, prevX, prevY, lastX, lastY, paint)
-            drawRoleLabel(canvas, role, firstX, firstY)
+            if (players.isEmpty()) {
+                drawRoleLabel(canvas, role, firstX, firstY)
+            }
         }
     }
 

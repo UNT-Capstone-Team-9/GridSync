@@ -20,7 +20,9 @@
         <activity android:name="com.cloud9.gridsync.SendPlayActivity" />
         <activity android:name="com.cloud9.gridsync.AssignWatchesActivity" />
         <activity android:name="com.cloud9.gridsync.PlayLibraryActivity" />
-        <activity android:name="com.cloud9.gridsync.CreatePlayActivity" />
+        <activity
+            android:name="com.cloud9.gridsync.CreatePlayActivity"
+            android:windowSoftInputMode="adjustPan" />
         <activity android:name="com.cloud9.gridsync.DashboardActivity" />
         <activity android:name="com.cloud9.gridsync.TrashActivity" />
 

@@ -246,12 +246,11 @@ object TabletServerManager {
         connections.values.forEach { connection ->
             val role = connection.role?.trim() ?: return@forEach
 
-            val assignment = getAssignmentForRole(play.assignments, role)
-
-            val filteredMovements = if (role.equals("QB", ignoreCase = true)) {
-                play.movements
-            } else {
-                getMovementsForRole(play.movements, role)
+            // Null means this role is not one of the play's 11 active players.
+            val payload = PlayFormation.buildWatchPayload(play, role)
+            if (payload == null) {
+                SessionLogManager.addEntry("$role not in ${play.playName}, skipped")
+                return@forEach
             }
 
             Thread {
@@ -261,9 +260,11 @@ object TabletServerManager {
                         JSONObject()
                             .put("type", "play")
                             .put("playName", play.playName)
-                            .put("assignment", assignment)
+                            .put("assignment", payload.assignment)
                             .put("role", role)
-                            .put("movements", gson.toJson(filteredMovements))
+                            .put("displayType", payload.displayType)
+                            .put("movements", gson.toJson(payload.movements))
+                            .put("players", gson.toJson(payload.players))
                     )
                     SessionLogManager.addEntry("Play ${play.playName} sent to $role")
                 } catch (e: Exception) {
@@ -314,27 +315,6 @@ object TabletServerManager {
         }
 
         editor.apply()
-    }
-
-    private fun getAssignmentForRole(assignments: Map<String, String>, role: String): String {
-        return assignments.entries.firstOrNull {
-            it.key.trim().equals(role.trim(), ignoreCase = true)
-        }?.value ?: "Follow your assigned route"
-    }
-
-    private fun getMovementsForRole(
-        movements: Map<String, List<PointData>>,
-        role: String
-    ): Map<String, List<PointData>> {
-        val match = movements.entries.firstOrNull {
-            it.key.trim().equals(role.trim(), ignoreCase = true)
-        }
-
-        return if (match != null) {
-            mapOf(match.key to match.value)
-        } else {
-            emptyMap()
-        }
     }
 
     private fun acceptLoop(server: ServerSocket) {

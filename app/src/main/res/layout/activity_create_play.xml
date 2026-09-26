@@ -1,98 +1,343 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#121212">
+    android:background="#0D1B2A"
+    android:orientation="vertical">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <!-- Top bar -->
+    <LinearLayout
         android:id="@+id/header"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:padding="16dp"
+        android:layout_height="60dp"
         android:background="#1B263B"
-        app:layout_constraintTop_toTopOf="parent">
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="8dp"
+        android:paddingEnd="16dp">
 
         <ImageButton
             android:id="@+id/backButton"
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Home"
             android:src="@android:drawable/ic_media_previous"
-            app:tint="#FFFFFF"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:tint="#FFFFFF" />
 
-        <EditText
-            android:id="@+id/etPlayName"
+        <TextView
+            android:id="@+id/tvScreenTitle"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:hint="Enter Play Name"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:text="CREATE NEW PLAY"
             android:textColor="#FFFFFF"
-            android:textColorHint="#AAAAAA"
-            android:background="@android:color/transparent"
             android:textSize="20sp"
-            app:layout_constraintBottom_toBottomOf="@id/backButton"
-            app:layout_constraintEnd_toStartOf="@+id/btnSavePlay"
-            app:layout_constraintStart_toEndOf="@id/backButton"
-            app:layout_constraintTop_toTopOf="@id/backButton" />
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/btnCancel"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="12dp"
+            android:text="CANCEL"
+            android:textColor="#FFFFFF"
+            app:strokeColor="#415A77" />
 
         <Button
             android:id="@+id/btnSavePlay"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="SAVE"
             android:backgroundTint="#FCA311"
+            android:text="SAVE"
             android:textColor="#14213D"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-    </androidx.constraintlayout.widget.ConstraintLayout>
+            android:textStyle="bold" />
+    </LinearLayout>
 
+    <!-- Play information -->
     <LinearLayout
-        android:id="@+id/roleToolbar"
+        android:id="@+id/playInfoBar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:padding="8dp"
         android:background="#2C3E50"
-        app:layout_constraintTop_toBottomOf="@id/header">
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingTop="8dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="8dp">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Drawing for: "
+            android:layout_marginEnd="8dp"
+            android:text="Play Name"
             android:textColor="#FFFFFF"
-            android:layout_gravity="center_vertical"
-            android:layout_marginEnd="8dp"/>
+            android:textSize="15sp" />
 
-        <Spinner
-            android:id="@+id/spinnerRoles"
+        <EditText
+            android:id="@+id/etPlayName"
+            android:layout_width="0dp"
+            android:layout_height="44dp"
+            android:layout_weight="1.2"
+            android:background="@drawable/create_play_input"
+            android:hint="e.g. Trips Right Flood"
+            android:imeOptions="actionNext|flagNoExtractUi"
+            android:inputType="textCapCharacters"
+            android:maxLines="1"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#778DA9"
+            android:textSize="16sp" />
+
+        <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:entries="@array/football_roles"
-            android:backgroundTint="#FFFFFF" />
+            android:layout_marginStart="20dp"
+            android:layout_marginEnd="8dp"
+            android:text="Formation"
+            android:textColor="#FFFFFF"
+            android:textSize="15sp" />
 
-        <View
+        <EditText
+            android:id="@+id/etFormation"
             android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:layout_weight="1"/>
+            android:layout_height="44dp"
+            android:layout_weight="1"
+            android:background="@drawable/create_play_input"
+            android:hint="e.g. Trips Right"
+            android:imeOptions="actionDone|flagNoExtractUi"
+            android:inputType="textCapWords"
+            android:maxLines="1"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#778DA9"
+            android:textSize="16sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="20dp"
+            android:layout_marginEnd="8dp"
+            android:text="Play Type"
+            android:textColor="#FFFFFF"
+            android:textSize="15sp" />
 
         <Button
-            android:id="@+id/btnClear"
-            style="?android:attr/borderlessButtonStyle"
+            android:id="@+id/btnPlayTypePass"
+            style="@style/Widget.Material3.Button.OutlinedButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="CLEAR"
-            android:textColor="#FF4444" />
+            android:layout_marginEnd="6dp"
+            android:minWidth="88dp"
+            android:text="PASS" />
+
+        <Button
+            android:id="@+id/btnPlayTypeRun"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minWidth="88dp"
+            android:text="RUN" />
     </LinearLayout>
 
-    <com.cloud9.gridsync.ui.CoachDrawingView
-        android:id="@+id/coachDrawingView"
+    <!-- Field and personnel -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/roleToolbar"
-        android:background="#1B5E20" />
+        android:layout_weight="1"
+        android:orientation="horizontal">
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+        <com.cloud9.gridsync.ui.CoachDrawingView
+            android:id="@+id/coachDrawingView"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="#1B5E20" />
+
+        <LinearLayout
+            android:id="@+id/personnelPanel"
+            android:layout_width="180dp"
+            android:layout_height="match_parent"
+            android:background="#1B263B"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="PERSONNEL"
+                android:textColor="#FCA311"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvActiveCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="Active: 11 / 11"
+                android:textColor="#FFFFFF"
+                android:textSize="15sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:text="SUBSTITUTES"
+                android:textColor="#778DA9"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvSwapHint"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="Tap a substitute, then tap the player on the field it replaces."
+                android:textColor="#B0BCCB"
+                android:textSize="12sp" />
+
+            <ScrollView
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_marginTop="8dp"
+                android:layout_weight="1">
+
+                <LinearLayout
+                    android:id="@+id/benchContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+            </ScrollView>
+
+            <Button
+                android:id="@+id/btnCancelSwap"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="CANCEL SWAP"
+                android:textColor="#FF6B6B"
+                android:visibility="gone" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Selected player assignment -->
+    <LinearLayout
+        android:id="@+id/assignmentBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#1B263B"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingTop="6dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="2dp">
+
+        <TextView
+            android:id="@+id/tvSelectedPlayer"
+            android:layout_width="150dp"
+            android:layout_height="wrap_content"
+            android:text="Selected: none"
+            android:textColor="#FCA311"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:text="Assignment"
+            android:textColor="#FFFFFF"
+            android:textSize="15sp" />
+
+        <Spinner
+            android:id="@+id/spinnerAssignment"
+            android:layout_width="190dp"
+            android:layout_height="44dp"
+            android:background="@drawable/create_play_input"
+            android:popupBackground="#FFFFFF" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="20dp"
+            android:layout_marginEnd="8dp"
+            android:text="Instruction"
+            android:textColor="#FFFFFF"
+            android:textSize="15sp" />
+
+        <EditText
+            android:id="@+id/etInstruction"
+            android:layout_width="0dp"
+            android:layout_height="44dp"
+            android:layout_weight="1"
+            android:background="@drawable/create_play_input"
+            android:hint="Written instruction for the selected player"
+            android:imeOptions="actionDone|flagNoExtractUi"
+            android:inputType="textCapSentences"
+            android:maxLines="1"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#778DA9"
+            android:textSize="15sp" />
+    </LinearLayout>
+
+    <!-- Tools -->
+    <LinearLayout
+        android:id="@+id/toolsBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#1B263B"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="4dp">
+
+        <Button
+            android:id="@+id/btnMovePlayers"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:text="MOVE PLAYERS" />
+
+        <Button
+            android:id="@+id/btnDrawRoute"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="16dp"
+            android:text="DRAW ROUTE" />
+
+        <TextView
+            android:id="@+id/tvModeHint"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textColor="#B0BCCB"
+            android:textSize="13sp" />
+
+        <Button
+            android:id="@+id/btnClearRoute"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:text="CLEAR SELECTED ROUTE"
+            android:textColor="#FFFFFF"
+            app:strokeColor="#415A77" />
+
+        <Button
+            android:id="@+id/btnResetFormation"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="RESET FORMATION"
+            android:textColor="#FF6B6B"
+            app:strokeColor="#FF6B6B" />
+    </LinearLayout>
+
+</LinearLayout>
