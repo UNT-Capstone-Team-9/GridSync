@@ -8,6 +8,9 @@ object DefaultPlaySeeder {
 
     private val gson = Gson()
 
+    private const val PLACEHOLDER_ASSIGNMENT =
+        "Built in default play. Route drawing for this play has not been digitized yet."
+
     private val defaultPlayNames = listOf(
         "RED SLOT RIGHT BOOTLEG LEFT",
         "ACE 60 SLANT RETURNS",
@@ -19,48 +22,32 @@ object DefaultPlaySeeder {
         "RED WING RIGHT BOOTLEG RIGHT"
     )
 
-    private val defaultRoles = listOf(
-        "QB",
-        "RB",
-        "WR1",
-        "WR2",
-        "TE",
-        "LT",
-        "LG",
-        "C",
-        "RG",
-        "RT",
-        "FB"
-    )
-
-    fun seedDefaultsIfMissing(context: Context) {
+    // The built in placeholder plays are no longer added to the library. This removes copies
+    // left by earlier versions, but only while they still hold just the placeholder data, so a
+    // default play the coach has since edited is kept.
+    fun removeUntouchedDefaults(context: Context) {
         val dao = AppDatabase.getDatabase(context).playDao()
 
-        buildDefaultPlayEntities().forEach { playEntity ->
-            val existing = dao.getPlayByName(playEntity.name)
-            if (existing == null) {
-                dao.insertPlay(playEntity)
+        defaultPlayNames.forEach { playName ->
+            val existing = dao.getPlayByName(playName) ?: return@forEach
+            if (isUntouchedDefault(existing.dataJson)) {
+                dao.permanentlyDeleteByName(playName)
+                HurryUpRepository.onPlayPermanentlyDeleted(context, playName)
             }
         }
     }
 
-    private fun buildDefaultPlayEntities(): List<PlayEntity> {
-        return defaultPlayNames.map { playName ->
-            val assignments = defaultRoles.associateWith {
-                "Built in default play. Route drawing for this play has not been digitized yet."
-            }
+    // Compares content rather than raw JSON, since field order in the stored JSON can vary by device.
+    private fun isUntouchedDefault(dataJson: String): Boolean {
+        val play = try {
+            gson.fromJson(dataJson, PlayMessage::class.java)
+        } catch (_: Exception) {
+            return false
+        } ?: return false
 
-            val playMessage = PlayMessage(
-                playName = playName,
-                assignments = assignments,
-                movements = emptyMap(),
-                imageResourceName = ""
-            )
-
-            PlayEntity(
-                name = playName,
-                dataJson = gson.toJson(playMessage)
-            )
-        }
+        return play.players.isNullOrEmpty() &&
+            play.movements.isNullOrEmpty() &&
+            play.formationName.isNullOrBlank() &&
+            play.assignments.orEmpty().values.all { it == PLACEHOLDER_ASSIGNMENT }
     }
 }

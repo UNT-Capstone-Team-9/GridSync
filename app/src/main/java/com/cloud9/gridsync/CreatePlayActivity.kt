@@ -17,6 +17,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.cloud9.gridsync.database.AppDatabase
+import com.cloud9.gridsync.database.HurryUpRepository
 import com.cloud9.gridsync.database.PlayEntity
 import com.cloud9.gridsync.network.PlayFormation
 import com.cloud9.gridsync.network.PlayMessage
@@ -415,6 +416,11 @@ class CreatePlayActivity : AppCompatActivity(), CoachDrawingView.Listener {
                 )
 
                 dao.insertPlay(entity)
+
+                // A play renamed while editing keeps its place in any Hurry-Up Packages.
+                if (isEditMode && originalPlayName != null && originalPlayName != name) {
+                    HurryUpRepository.onPlayRenamed(this, originalPlayName!!, name)
+                }
 
                 runOnUiThread {
                     SessionLogManager.addEntry(

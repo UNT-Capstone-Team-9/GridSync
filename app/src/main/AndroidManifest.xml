@@ -25,6 +25,8 @@
             android:windowSoftInputMode="adjustPan" />
         <activity android:name="com.cloud9.gridsync.DashboardActivity" />
         <activity android:name="com.cloud9.gridsync.TrashActivity" />
+        <activity android:name="com.cloud9.gridsync.HurryUpPackagesActivity" />
+        <activity android:name="com.cloud9.gridsync.HurryUpPackageDetailActivity" />
 
         <activity
             android:name=".MainActivity"

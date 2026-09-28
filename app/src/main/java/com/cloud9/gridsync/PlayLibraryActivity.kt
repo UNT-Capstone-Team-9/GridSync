@@ -18,6 +18,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.cloud9.gridsync.database.AppDatabase
 import com.cloud9.gridsync.database.DefaultPlaySeeder
+import com.cloud9.gridsync.database.HurryUpRepository
 import com.cloud9.gridsync.network.PlayMessage
 import com.cloud9.gridsync.network.SessionLogManager
 import com.cloud9.gridsync.network.TabletServerManager
@@ -91,6 +92,9 @@ class PlayLibraryActivity : AppCompatActivity() {
                 intent.putExtra("edit_play_json", gson.toJson(play))
                 startActivity(intent)
             },
+            onAddToHurryUpClicked = { play ->
+                showAddToHurryUpDialog(play)
+            },
             onDeleteClicked = { play ->
                 showMoveToTrashConfirmation(play)
             }
@@ -128,7 +132,7 @@ class PlayLibraryActivity : AppCompatActivity() {
 
     private fun loadPlaysFromDatabase() {
         thread {
-            DefaultPlaySeeder.seedDefaultsIfMissing(applicationContext)
+            DefaultPlaySeeder.removeUntouchedDefaults(applicationContext)
 
             val dao = AppDatabase.getDatabase(applicationContext).playDao()
             val thirtyDaysMillis = 30L * 24L * 60L * 60L * 1000L
@@ -172,6 +176,47 @@ class PlayLibraryActivity : AppCompatActivity() {
         sendButton.isEnabled = selectedPlay != null
         emptyStateText.visibility = if (filtered.isEmpty()) View.VISIBLE else View.GONE
         playRecyclerView.visibility = if (filtered.isEmpty()) View.GONE else View.VISIBLE
+    }
+
+    // Lists the coach's own packages. The play is linked by name, never copied.
+    private fun showAddToHurryUpDialog(play: PlayMessage) {
+        thread {
+            val packages = HurryUpRepository.getSummaries(applicationContext)
+
+            runOnUiThread {
+                val createLabel = "+ Create New Package"
+                val options = packages.map { it.packageName } + createLabel
+
+                AlertDialog.Builder(this@PlayLibraryActivity)
+                    .setTitle("Add \"${play.playName}\" to:")
+                    .setItems(options.toTypedArray()) { _, which ->
+                        if (which == packages.size) {
+                            HurryUpDialogs.startCreatePackageFlow(
+                                this@PlayLibraryActivity,
+                                preselectedPlays = setOf(play.playName)
+                            ) { _, _ -> }
+                        } else {
+                            addPlayToPackage(play, packages[which].packageId, packages[which].packageName)
+                        }
+                    }
+                    .setNegativeButton("Cancel", null)
+                    .show()
+            }
+        }
+    }
+
+    private fun addPlayToPackage(play: PlayMessage, packageId: Long, packageName: String) {
+        thread {
+            val result = HurryUpRepository.addPlays(applicationContext, packageId, listOf(play.playName))
+            runOnUiThread {
+                if (result.added.isEmpty()) {
+                    Toast.makeText(this@PlayLibraryActivity, HurryUpRepository.DUPLICATE_PLAY_MESSAGE, Toast.LENGTH_LONG).show()
+                } else {
+                    SessionLogManager.addEntry("Play \"${play.playName}\" added to \"$packageName\"")
+                    Toast.makeText(this@PlayLibraryActivity, "Added to \"$packageName\"", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
     }
 
     private fun showMoveToTrashConfirmation(play: PlayMessage) {

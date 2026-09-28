@@ -11,6 +11,7 @@ class PlayListAdapter(
     private val plays: MutableList<PlayMessage>,
     private val onPlayClicked: (PlayMessage) -> Unit,
     private val onEditClicked: (PlayMessage) -> Unit,
+    private val onAddToHurryUpClicked: (PlayMessage) -> Unit,
     private val onDeleteClicked: (PlayMessage) -> Unit
 ) : RecyclerView.Adapter<PlayListAdapter.PlayViewHolder>() {
 
@@ -45,12 +46,18 @@ class PlayListAdapter(
         holder.titleText.setOnLongClickListener { view ->
             val popupMenu = PopupMenu(view.context, view)
             popupMenu.menu.add("Edit")
+            popupMenu.menu.add("Add to Hurry-Up Package")
             popupMenu.menu.add("Delete")
 
             popupMenu.setOnMenuItemClickListener { item ->
                 when (item.title.toString()) {
                     "Edit" -> {
                         onEditClicked(play)
+                        true
+                    }
+
+                    "Add to Hurry-Up Package" -> {
+                        onAddToHurryUpClicked(play)
                         true
                     }
 

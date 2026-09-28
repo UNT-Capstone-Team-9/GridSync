@@ -82,6 +82,10 @@ class DashboardActivity : AppCompatActivity(),
             startActivity(Intent(this, AssignWatchesActivity::class.java))
         }
 
+        findViewById<LinearLayout>(R.id.hurryUpCard).setOnClickListener {
+            startActivity(Intent(this, HurryUpPackagesActivity::class.java))
+        }
+
         sendPlayCard.setOnClickListener {
             startActivity(Intent(this, SendPlayActivity::class.java))
         }
