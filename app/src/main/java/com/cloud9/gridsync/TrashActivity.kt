@@ -6,7 +6,6 @@ import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.cloud9.gridsync.database.AppDatabase
@@ -15,7 +14,7 @@ import com.cloud9.gridsync.network.SessionLogManager
 import com.google.gson.Gson
 import kotlin.concurrent.thread
 
-class TrashActivity : AppCompatActivity() {
+class TrashActivity : SwipeBackActivity() {
 
     private lateinit var trashRecyclerView: RecyclerView
     private lateinit var emptyStateText: TextView
@@ -31,7 +30,7 @@ class TrashActivity : AppCompatActivity() {
         emptyStateText = findViewById(R.id.emptyStateText)
 
         backButton.setOnClickListener {
-            finish()
+            goBack()
         }
 
         adapter = TrashListAdapter(

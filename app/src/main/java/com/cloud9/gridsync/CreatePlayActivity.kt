@@ -9,7 +9,6 @@ import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.Spinner
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
 import com.cloud9.gridsync.database.AppDatabase
 import com.cloud9.gridsync.database.PlayEntity
 import com.cloud9.gridsync.network.PlayMessage
@@ -18,12 +17,16 @@ import com.cloud9.gridsync.network.SessionLogManager
 import com.cloud9.gridsync.ui.CoachDrawingView
 import com.google.gson.Gson
 
-class CreatePlayActivity : AppCompatActivity() {
+class CreatePlayActivity : SwipeBackActivity() {
 
     private lateinit var drawingView: CoachDrawingView
     private lateinit var roleSpinner: Spinner
     private lateinit var playNameInput: EditText
     private lateinit var roles: List<String>
+
+    // The canvas is drawn on with the finger, so only a swipe that starts at the very
+    // left edge of the screen goes back on this screen.
+    override val swipeStartZoneDp: Int = 24
 
     private val gson = Gson()
     private var originalPlayName: String? = null
@@ -70,7 +73,7 @@ class CreatePlayActivity : AppCompatActivity() {
         }
 
         backButton.setOnClickListener {
-            finish()
+            goBack()
         }
 
         clearButton.setOnClickListener {

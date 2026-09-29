@@ -32,14 +32,15 @@
 
         <ImageView
             android:id="@+id/settingsIcon"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
-            android:background="@android:color/transparent"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="@drawable/bg_icon_button"
             android:clickable="true"
             android:contentDescription="Settings"
             android:focusable="true"
-            android:padding="6dp"
-            android:src="@android:drawable/ic_menu_manage" />
+            android:padding="10dp"
+            android:src="@drawable/ic_settings"
+            app:tint="#14213D" />
     </LinearLayout>
 
     <LinearLayout
@@ -237,7 +238,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="14dp"
-            android:text="Send Play"
+            android:text="Hurry-Up Package"
             android:textColor="#1B263B"
             android:textSize="20sp"
             android:textStyle="bold" />
@@ -283,7 +284,7 @@
     <LinearLayout
         android:id="@+id/sessionLogPanel"
         android:layout_width="0dp"
-        android:layout_height="140dp"
+        android:layout_height="0dp"
         android:background="@drawable/card_background"
         android:elevation="4dp"
         android:orientation="vertical"
@@ -295,7 +296,8 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Session Activity Log"
+            android:text=""
+            android:visibility="gone"
             android:textColor="#1B263B"
             android:textSize="18sp"
             android:textStyle="bold" />

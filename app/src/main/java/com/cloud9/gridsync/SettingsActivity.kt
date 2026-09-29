@@ -2,16 +2,17 @@ package com.cloud9.gridsync
 
 import android.net.Uri
 import android.os.Bundle
+import android.content.Intent
+import android.view.View
 import android.widget.Button
 import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
 import com.cloud9.gridsync.backup.PlayBackupManager
 import kotlin.concurrent.thread
 
-class SettingsActivity : AppCompatActivity() {
+class SettingsActivity : SwipeBackActivity() {
 
     private lateinit var resultText: TextView
 
@@ -24,12 +25,12 @@ class SettingsActivity : AppCompatActivity() {
             try {
                 val count = PlayBackupManager.exportActivePlays(applicationContext, uri)
                 runOnUiThread {
-                    resultText.text = "Exported $count plays successfully"
+                    showResult("Exported $count plays successfully")
                     Toast.makeText(this, "Export complete", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
                 runOnUiThread {
-                    resultText.text = "Export failed"
+                    showResult("Export failed")
                     Toast.makeText(this, "Export failed", Toast.LENGTH_SHORT).show()
                 }
             }
@@ -45,12 +46,12 @@ class SettingsActivity : AppCompatActivity() {
             try {
                 val count = PlayBackupManager.importPlays(applicationContext, uri)
                 runOnUiThread {
-                    resultText.text = "Imported $count plays successfully"
+                    showResult("Imported $count plays successfully")
                     Toast.makeText(this, "Import complete", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
                 runOnUiThread {
-                    resultText.text = "Import failed"
+                    showResult("Import failed")
                     Toast.makeText(this, "Import failed", Toast.LENGTH_SHORT).show()
                 }
             }
@@ -63,12 +64,23 @@ class SettingsActivity : AppCompatActivity() {
 
         val backButton = findViewById<ImageButton>(R.id.backButton)
         val exportButton = findViewById<Button>(R.id.exportButton)
+        findViewById<View>(R.id.sessionLogButton).setOnClickListener {
+            startActivity(Intent(this, SessionLogActivity::class.java))
+        }
         val importButton = findViewById<Button>(R.id.importButton)
         resultText = findViewById(R.id.resultText)
 
         backButton.setOnClickListener {
-            finish()
+            goBack()
         }
+
+        val versionName = try {
+            packageManager.getPackageInfo(packageName, 0).versionName
+        } catch (_: Exception) {
+            null
+        }
+        findViewById<TextView>(R.id.versionText).text =
+            if (versionName.isNullOrBlank()) "GridSync" else "GridSync  \u2022  Version $versionName"
 
         exportButton.setOnClickListener {
             exportLauncher.launch("gridsync_plays_backup.json")
@@ -77,5 +89,10 @@ class SettingsActivity : AppCompatActivity() {
         importButton.setOnClickListener {
             importLauncher.launch(arrayOf("application/json"))
         }
+    }
+
+    private fun showResult(message: String) {
+        resultText.text = message
+        resultText.visibility = View.VISIBLE
     }
 }

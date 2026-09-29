@@ -5,148 +5,123 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.Gravity
+import android.view.View
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.cloud9.gridsync.network.PointData
 import com.cloud9.gridsync.network.WatchClientManager
-import com.cloud9.gridsync.ui.WatchRouteView
+import com.cloud9.gridsync.ui.WatchPlayView
 import kotlin.random.Random
 
-class WatchDashboardActivity : AppCompatActivity(),
-    WatchClientManager.WatchMessageListener {
-
-    private lateinit var waitingContainer: LinearLayout
-    private lateinit var textMessageContainer: LinearLayout
-    private lateinit var playContainer: LinearLayout
-
-    private lateinit var waitingRoleText: TextView
-    private lateinit var waitingTitleText: TextView
-    private lateinit var waitingStatusText: TextView
-
-    private lateinit var messageRoleText: TextView
-    private lateinit var messageTitleText: TextView
-    private lateinit var messageBodyText: TextView
+class WatchDashboardActivity : AppCompatActivity(), WatchClientManager.WatchMessageListener {
 
     private lateinit var playText: TextView
     private lateinit var roleText: TextView
     private lateinit var playNameText: TextView
-    private lateinit var watchRouteView: WatchRouteView
-
-    private var currentRole: String = "Unassigned"
-
-    private val mainHandler = Handler(Looper.getMainLooper())
-
-    companion object {
-        private const val PLAY_DISPLAY_DURATION_MS = 18000L
-        private const val MESSAGE_DISPLAY_DURATION_MS = 18000L
-    }
-
-    private val resetToWaitingRunnable = Runnable {
-        showWaitingState()
-    }
+    private lateinit var playView: WatchPlayView
+    private val handler = Handler(Looper.getMainLooper())
+    private var currentRole = "Unassigned"
 
     private val resetRunnable = Runnable {
-        showCenteredMessage("Ready for assignment")
+        playView.clearRoute()
+        playNameText.visibility = View.GONE
+        showCenteredMessage(if (currentRole == "Unassigned") "Ready for assignment" else "Waiting for play")
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_watch_dashboard)
 
-        waitingContainer = findViewById(R.id.waitingContainer)
-        textMessageContainer = findViewById(R.id.textMessageContainer)
-        playContainer = findViewById(R.id.playContainer)
-
-        waitingRoleText = findViewById(R.id.waitingRoleText)
-        waitingTitleText = findViewById(R.id.waitingTitleText)
-        waitingStatusText = findViewById(R.id.waitingStatusText)
-
-        messageRoleText = findViewById(R.id.messageRoleText)
-        messageTitleText = findViewById(R.id.messageTitleText)
-        messageBodyText = findViewById(R.id.messageBodyText)
-
         playText = findViewById(R.id.playText)
         roleText = findViewById(R.id.playerRoleText)
         playNameText = findViewById(R.id.playNameText)
-        watchRouteView = findViewById(R.id.watchRouteView)
-
-        val watchId = getOrCreateWatchId()
-
-        roleText.text = "Unassigned"
+        playView = findViewById(R.id.watchPlayView)
+        roleText.text = currentRole
         showCenteredMessage("Scanning for tablet...")
 
         WatchClientManager.setListener(this)
-        WatchClientManager.connect(applicationContext, watchId)
+        WatchClientManager.connect(applicationContext, getOrCreateWatchId())
     }
 
     override fun onConnectionChanged(isConnected: Boolean) {
         handler.removeCallbacks(resetRunnable)
+        if (!isConnected) {
+            playView.clearRoute()
+            playNameText.visibility = View.GONE
+        }
+        showCenteredMessage(if (isConnected) "Ready for assignment" else "Waiting for connection...")
+    }
 
-        if (isConnected) {
-            showCenteredMessage("Ready for assignment")
-        } else {
-            showCenteredMessage("Waiting for connection...")
+    override fun onRoleChanged(role: String) {
+        currentRole = role.ifBlank { "Unassigned" }
+        roleText.text = currentRole
+        if (playView.visibility != View.VISIBLE) {
+            showCenteredMessage(if (currentRole == "Unassigned") "Ready for assignment" else "Waiting for play")
         }
     }
-    //Display Role
-    override fun onRoleChanged(role: String) {
-        currentRole = role
-        waitingRoleText.text = role
-        messageRoleText.text = role
-        roleText.text = role
-        watchRouteView.setRole(role)
+
+    override fun onPlayReceived(
+        playName: String,
+        playTextMessage: String,
+        movements: Map<String, List<PointData>>
+    ) {
+        handler.removeCallbacks(resetRunnable)
+
+        val route = movements.entries.firstOrNull {
+            it.key.trim().equals(currentRole.trim(), ignoreCase = true)
+        }?.value ?: movements.values.firstOrNull().orEmpty()
+
+        if (route.size >= 2) {
+            playText.visibility = View.GONE
+            playNameText.text = playName.ifBlank { "Play" }
+            playNameText.visibility = View.VISIBLE
+            playView.showRoute(currentRole, route)
+        } else {
+            playView.clearRoute()
+            playNameText.visibility = View.GONE
+            val display = buildString {
+                if (playName.isNotBlank()) append(playName)
+                if (playTextMessage.isNotBlank()) {
+                    if (isNotEmpty()) append("\n\n")
+                    append(playTextMessage)
+                }
+            }.ifBlank { "Play received" }
+            showCenteredMessage(display)
+        }
+
+        handler.postDelayed(resetRunnable, 18_000L)
     }
 
-    // Displays the play information received from the coach's tablet on the assigned player's watch.
-    override fun onPlayReceived(playMessage: String) {
+    override fun onTextMessageReceived(role: String, message: String) {
         handler.removeCallbacks(resetRunnable)
-        showCenteredMessage(playMessage)
-        handler.postDelayed(resetRunnable, 15000
+        playView.clearRoute()
+        playNameText.visibility = View.GONE
+        if (role.isNotBlank()) {
+            currentRole = role
+            roleText.text = currentRole
+        }
+        showCenteredMessage(message.ifBlank { "Message received" })
+        handler.postDelayed(resetRunnable, 18_000L)
     }
 
     override fun onDestroy() {
-        super.onDestroy()
-        mainHandler.removeCallbacks(resetToWaitingRunnable)
+        handler.removeCallbacksAndMessages(null)
+        WatchClientManager.disconnect()
         WatchClientManager.clearListener()
-    }
-
-    private fun showScanningState() {
-        waitingContainer.visibility = View.VISIBLE
-        textMessageContainer.visibility = View.GONE
-        playContainer.visibility = View.GONE
-
-        waitingRoleText.text = currentRole
-        waitingTitleText.text = "Waiting for play"
-        waitingStatusText.text = "Scanning for tablet..."
-        watchRouteView.setMovements(emptyMap())
-    }
-
-    private fun showWaitingState() {
-        waitingContainer.visibility = View.VISIBLE
-        textMessageContainer.visibility = View.GONE
-        playContainer.visibility = View.GONE
-
-        waitingRoleText.text = currentRole
-        waitingTitleText.text = "Waiting for play"
-        waitingStatusText.text = "Waiting for assignment"
-        watchRouteView.setMovements(emptyMap())
+        super.onDestroy()
     }
 
     private fun showCenteredMessage(text: String) {
+        playText.visibility = View.VISIBLE
         playText.text = text.trim()
-        playText.textSize = 42f
+        playText.textSize = 28f
         playText.gravity = Gravity.CENTER
     }
 
     private fun getOrCreateWatchId(): String {
         val prefs = getSharedPreferences("watch_prefs", Context.MODE_PRIVATE)
-        var id = prefs.getString("watch_id", null)
-
-        if (id == null) {
-            id = String.format("%02d", Random.nextInt(0, 100))
-            prefs.edit().putString("watch_id", id).apply()
+        return prefs.getString("watch_id", null) ?: String.format("%02d", Random.nextInt(100)).also {
+            prefs.edit().putString("watch_id", it).apply()
         }
-
-        return id ?: "00"
     }
 }

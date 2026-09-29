@@ -18,8 +18,7 @@ import com.cloud9.gridsync.network.SessionLogManager
 import com.cloud9.gridsync.network.TabletServerManager
 
 class DashboardActivity : AppCompatActivity(),
-    TabletServerManager.WatchListListener,
-    SessionLogManager.SessionLogListener {
+    TabletServerManager.WatchListListener {
 
     private lateinit var settingsIcon: ImageView
     private lateinit var assignWatchesCard: LinearLayout
@@ -30,7 +29,6 @@ class DashboardActivity : AppCompatActivity(),
     private lateinit var networkStatusText: TextView
     private lateinit var watchCountText: TextView
     private lateinit var playerStatusListContainer: LinearLayout
-    private lateinit var sessionLogListContainer: LinearLayout
 
     private fun isLokmatWatch(): Boolean {
         val model = Build.MODEL ?: ""
@@ -54,8 +52,8 @@ class DashboardActivity : AppCompatActivity(),
 
         setContentView(R.layout.activity_dashboard)
 
+        SessionLogManager.init(applicationContext)
         TabletServerManager.start(applicationContext)
-        SessionLogManager.addEntry("Tablet server started")
         Toast.makeText(this, "Tablet server started", Toast.LENGTH_SHORT).show()
 
         settingsIcon = findViewById(R.id.settingsIcon)
@@ -67,7 +65,6 @@ class DashboardActivity : AppCompatActivity(),
         networkStatusText = findViewById(R.id.networkStatusText)
         watchCountText = findViewById(R.id.watchCountText)
         playerStatusListContainer = findViewById(R.id.playerStatusListContainer)
-        sessionLogListContainer = findViewById(R.id.sessionLogListContainer)
 
         createPlayCard.setOnClickListener {
             startActivity(Intent(this, CreatePlayActivity::class.java))
@@ -82,7 +79,7 @@ class DashboardActivity : AppCompatActivity(),
         }
 
         sendPlayCard.setOnClickListener {
-            startActivity(Intent(this, SendPlayActivity::class.java))
+            startActivity(Intent(this, HurryUpActivity::class.java))
         }
 
         settingsIcon.setOnClickListener {
@@ -90,32 +87,22 @@ class DashboardActivity : AppCompatActivity(),
         }
 
         renderDashboardStatuses()
-        renderSessionLog(SessionLogManager.getEntries())
     }
 
     override fun onStart() {
         super.onStart()
         TabletServerManager.addListener(this)
-        SessionLogManager.addListener(this)
         renderDashboardStatuses()
-        renderSessionLog(SessionLogManager.getEntries())
     }
 
     override fun onStop() {
         super.onStop()
         TabletServerManager.removeListener(this)
-        SessionLogManager.removeListener(this)
     }
 
     override fun onWatchListChanged(watches: List<ConnectedWatch>) {
         runOnUiThread {
             renderDashboardStatuses()
-        }
-    }
-
-    override fun onSessionLogChanged(entries: List<String>) {
-        runOnUiThread {
-            renderSessionLog(entries)
         }
     }
 
@@ -143,10 +130,16 @@ class DashboardActivity : AppCompatActivity(),
     private fun buildStatusRow(info: RoleStatusInfo): TextView {
         val textView = TextView(this)
 
+        // Show the coach's custom watch name when there is one, otherwise the watch ID.
+        val watchLabel = when {
+            !info.assignedWatchName.isNullOrBlank() -> info.assignedWatchName.orEmpty()
+            !info.assignedWatchId.isNullOrBlank() -> "ID ${info.assignedWatchId}"
+            else -> ""
+        }
+
         val statusText = when (info.status) {
-            "Offline" -> if (info.assignedWatchId.isNullOrBlank()) "Offline" else "Offline  ID ${info.assignedWatchId}"
-            "Connecting" -> if (info.assignedWatchId.isNullOrBlank()) "Connecting" else "Connecting  ID ${info.assignedWatchId}"
-            "Online" -> if (info.assignedWatchId.isNullOrBlank()) "Online" else "Online  ID ${info.assignedWatchId}"
+            "Offline", "Connecting", "Online" ->
+                if (watchLabel.isBlank()) info.status else "${info.status}  $watchLabel"
             else -> "Unassigned"
         }
 
@@ -167,28 +160,6 @@ class DashboardActivity : AppCompatActivity(),
             ViewGroup.LayoutParams.WRAP_CONTENT
         )
         return textView
-    }
-
-    private fun renderSessionLog(entries: List<String>) {
-        sessionLogListContainer.removeAllViews()
-
-        if (entries.isEmpty()) {
-            val empty = TextView(this)
-            empty.text = "No activity yet"
-            empty.textSize = 14f
-            empty.setTextColor(Color.parseColor("#52606D"))
-            sessionLogListContainer.addView(empty)
-            return
-        }
-
-        entries.forEach { entry ->
-            val row = TextView(this)
-            row.text = entry
-            row.textSize = 14f
-            row.setTextColor(Color.parseColor("#52606D"))
-            row.setPadding(0, dp(4), 0, dp(4))
-            sessionLogListContainer.addView(row)
-        }
     }
 
     private fun dp(value: Int): Int {

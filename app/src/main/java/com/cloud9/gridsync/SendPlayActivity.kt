@@ -2,26 +2,20 @@ package com.cloud9.gridsync
 
 import android.graphics.Color
 import android.os.Bundle
-import android.view.View
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.ImageButton
-import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
 import com.cloud9.gridsync.network.ConnectedWatch
-import com.cloud9.gridsync.network.RoleRepository
-import com.cloud9.gridsync.network.RoleStatusInfo
 import com.cloud9.gridsync.network.SessionLogManager
 import com.cloud9.gridsync.network.TabletServerManager
 
-class SendPlayActivity : AppCompatActivity(), TabletServerManager.WatchListListener {
+class SendPlayActivity : SwipeBackActivity(), TabletServerManager.WatchListListener {
 
     private lateinit var messageInput: EditText
     private lateinit var sendButton: Button
-    private lateinit var roleStatusContainer: LinearLayout
 
     private lateinit var statusQB: TextView
     private lateinit var statusWR1: TextView
@@ -51,10 +45,10 @@ class SendPlayActivity : AppCompatActivity(), TabletServerManager.WatchListListe
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_send_play)
 
-        val backButton = findViewById<ImageButton>(R.id.backButton)
+        // Some tablet layouts do not include a backButton. Do not crash if it is absent.
+        findViewById<ImageButton?>(R.id.backButton)?.setOnClickListener { goBack() }
         messageInput = findViewById(R.id.messageInput)
         sendButton = findViewById(R.id.sendButton)
-        roleStatusContainer = findViewById(R.id.roleStatusContainer)
 
         statusQB = findViewById(R.id.statusQB)
         statusWR1 = findViewById(R.id.statusWR1)
@@ -80,32 +74,31 @@ class SendPlayActivity : AppCompatActivity(), TabletServerManager.WatchListListe
         checkRT = findViewById(R.id.checkRT)
         checkCB = findViewById(R.id.checkCB)
 
-        buildRoleRows()
         updateStatuses()
 
         sendButton.setOnClickListener {
             val message = messageInput.text.toString().trim()
-
             if (message.isEmpty()) {
-                Toast.makeText(this@SendPlayActivity, "Enter a message first", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Enter a message first", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
-            val selectedRoles = mutableSetOf<String>()
-            if (checkQB.isChecked) selectedRoles.add("QB")
-            if (checkWR1.isChecked) selectedRoles.add("WR1")
-            if (checkWR2.isChecked) selectedRoles.add("WR2")
-            if (checkRB.isChecked) selectedRoles.add("RB")
-            if (checkTE.isChecked) selectedRoles.add("TE")
-            if (checkLT.isChecked) selectedRoles.add("LT")
-            if (checkLG.isChecked) selectedRoles.add("LG")
-            if (checkC.isChecked) selectedRoles.add("C")
-            if (checkRG.isChecked) selectedRoles.add("RG")
-            if (checkRT.isChecked) selectedRoles.add("RT")
-            if (checkCB.isChecked) selectedRoles.add("CB")
+            val selectedRoles = buildSet {
+                if (checkQB.isChecked) add("QB")
+                if (checkWR1.isChecked) add("WR1")
+                if (checkWR2.isChecked) add("WR2")
+                if (checkRB.isChecked) add("RB")
+                if (checkTE.isChecked) add("TE")
+                if (checkLT.isChecked) add("LT")
+                if (checkLG.isChecked) add("LG")
+                if (checkC.isChecked) add("C")
+                if (checkRG.isChecked) add("RG")
+                if (checkRT.isChecked) add("RT")
+                if (checkCB.isChecked) add("CB")
+            }
 
             if (selectedRoles.isEmpty()) {
-                Toast.makeText(this@SendPlayActivity, "Select at least one role", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Select at least one role", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
@@ -114,11 +107,11 @@ class SendPlayActivity : AppCompatActivity(), TabletServerManager.WatchListListe
             val skipped = mutableListOf<String>()
 
             selectedRoles.forEach { role ->
-                if (connectedRoles.contains(role)) {
+                if (role in connectedRoles) {
                     TabletServerManager.sendToRole(role, message)
-                    delivered.add(role)
+                    delivered += role
                 } else {
-                    skipped.add(role)
+                    skipped += role
                 }
             }
 
@@ -127,17 +120,15 @@ class SendPlayActivity : AppCompatActivity(), TabletServerManager.WatchListListe
             }
 
             val resultText = buildString {
-                if (delivered.isNotEmpty()) {
-                    append("Sent to ${delivered.joinToString(", ")}")
-                }
+                if (delivered.isNotEmpty()) append("Sent to ${delivered.joinToString(", ")}")
                 if (skipped.isNotEmpty()) {
-                    if (isNotEmpty()) append("  ")
-                    append("Skipped ${skipped.joinToString(", ")}")
+                    if (isNotEmpty()) append(" • ")
+                    append("Skipped ${skipped.joinToString(", ")} (not connected)")
                 }
             }
 
             Toast.makeText(this, resultText, Toast.LENGTH_LONG).show()
-            messageInput.setText("")
+            if (delivered.isNotEmpty()) messageInput.setText("")
             updateStatuses()
         }
     }
@@ -149,14 +140,8 @@ class SendPlayActivity : AppCompatActivity(), TabletServerManager.WatchListListe
     }
 
     override fun onStop() {
-        super.onStop()
         TabletServerManager.removeListener(this)
-    }
-
-    override fun onWatchListChanged(watches: List<ConnectedWatch>) {
-        runOnUiThread {
-            updateStatuses()
-        }
+        super.onStop()
     }
 
     override fun onResume() {
@@ -164,31 +149,23 @@ class SendPlayActivity : AppCompatActivity(), TabletServerManager.WatchListListe
         updateStatuses()
     }
 
-    private fun buildRoleRows() {
-        roleStatusContainer.removeAllViews()
-        roleRowMap.clear()
+    override fun onWatchListChanged(watches: List<ConnectedWatch>) {
+        runOnUiThread { updateStatuses() }
+    }
 
-        roles.forEach { role ->
-            val row = LinearLayout(this).apply {
-                orientation = LinearLayout.HORIZONTAL
-                setPadding(0, dp(10), 0, dp(10))
-                layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                )
-            }
-
-        setRoleStatus(statusQB, connectedRoles.contains("QB"))
-        setRoleStatus(statusWR1, connectedRoles.contains("WR1"))
-        setRoleStatus(statusWR2, connectedRoles.contains("WR2"))
-        setRoleStatus(statusRB, connectedRoles.contains("RB"))
-        setRoleStatus(statusTE, connectedRoles.contains("TE"))
-        setRoleStatus(statusLT, connectedRoles.contains("LT"))
-        setRoleStatus(statusLG, connectedRoles.contains("LG"))
-        setRoleStatus(statusC, connectedRoles.contains("C"))
-        setRoleStatus(statusRG, connectedRoles.contains("RG"))
-        setRoleStatus(statusRT, connectedRoles.contains("RT"))
-        setRoleStatus(statusCB, connectedRoles.contains("CB"))
+    private fun updateStatuses() {
+        val connectedRoles = TabletServerManager.getConnectedRoles()
+        setRoleStatus(statusQB, "QB" in connectedRoles)
+        setRoleStatus(statusWR1, "WR1" in connectedRoles)
+        setRoleStatus(statusWR2, "WR2" in connectedRoles)
+        setRoleStatus(statusRB, "RB" in connectedRoles)
+        setRoleStatus(statusTE, "TE" in connectedRoles)
+        setRoleStatus(statusLT, "LT" in connectedRoles)
+        setRoleStatus(statusLG, "LG" in connectedRoles)
+        setRoleStatus(statusC, "C" in connectedRoles)
+        setRoleStatus(statusRG, "RG" in connectedRoles)
+        setRoleStatus(statusRT, "RT" in connectedRoles)
+        setRoleStatus(statusCB, "CB" in connectedRoles)
     }
 
     private fun setRoleStatus(textView: TextView, connected: Boolean) {
@@ -199,23 +176,5 @@ class SendPlayActivity : AppCompatActivity(), TabletServerManager.WatchListListe
             textView.text = "◦ Disconnected"
             textView.setTextColor(Color.parseColor("#B00020"))
         }
-    }
-
-    private fun applyRoleStatus(textView: TextView, info: RoleStatusInfo?) {
-        val status = info?.status ?: "Unassigned"
-        textView.text = status
-
-        textView.setTextColor(
-            when (status) {
-                "Online" -> Color.parseColor("#0F9D58")
-                "Connecting" -> Color.parseColor("#F59E0B")
-                "Offline" -> Color.parseColor("#7B8794")
-                else -> Color.parseColor("#1F2937")
-            }
-        )
-    }
-
-    private fun dp(value: Int): Int {
-        return (value * resources.displayMetrics.density).toInt()
     }
 }

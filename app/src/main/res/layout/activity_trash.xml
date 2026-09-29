@@ -23,11 +23,12 @@
             android:id="@+id/backButton"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:background="@android:color/transparent"
+            android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="Back"
-            android:padding="10dp"
-            android:src="@android:drawable/ic_media_previous"
-            android:tint="#FFFFFF" />
+            android:padding="12dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_back_chevron"
+            app:tint="#FFFFFF" />
 
         <TextView
             android:id="@+id/titleText"

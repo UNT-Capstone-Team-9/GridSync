@@ -1,6 +1,8 @@
 package com.cloud9.gridsync.network
 
 import android.content.Context
+import android.net.nsd.NsdManager
+import android.net.nsd.NsdServiceInfo
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
@@ -14,12 +16,16 @@ import java.net.ServerSocket
 import java.net.Socket
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArraySet
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
 object TabletServerManager {
 
     private const val TAG = "TabletServerManager"
     const val PAIR_CODE = "CLOUD9"
     const val SERVER_PORT = 5001
+    private const val SERVICE_TYPE = "_gridsync._tcp."
+    private const val SERVICE_NAME = "GridSync-Tablet"
 
     private const val PREFS_NAME = "tablet_role_assignments"
     private const val KEY_PREFIX = "watch_role_"
@@ -36,9 +42,18 @@ object TabletServerManager {
         val watchId: String,
         val watchName: String,
         val ipAddress: String,
-        @Volatile var role: String? = null
+        @Volatile var role: String? = null,
+        // One sender thread per watch: messages to a watch go out one at a time and
+        // in the order they were sent (important when plays are tapped quickly).
+        val sender: ExecutorService = Executors.newSingleThreadExecutor { runnable ->
+            Thread(runnable, "GridSync-Send").apply { isDaemon = true }
+        }
     ) {
         fun close() {
+            try {
+                sender.shutdown()
+            } catch (_: Exception) {
+            }
             try {
                 socket.close()
             } catch (_: Exception) {
@@ -57,6 +72,8 @@ object TabletServerManager {
 
     private var serverSocket: ServerSocket? = null
     private var appContext: Context? = null
+    private var nsdManager: NsdManager? = null
+    private var registrationListener: NsdManager.RegistrationListener? = null
 
     fun start(context: Context) {
         if (started) {
@@ -65,11 +82,14 @@ object TabletServerManager {
         }
 
         appContext = context.applicationContext
+        SessionLogManager.init(context.applicationContext)
         started = true
 
         Thread {
             try {
                 serverSocket = ServerSocket(SERVER_PORT)
+                registerNsdService()
+                SessionLogManager.addEntry("Tablet server ready on local network")
                 acceptLoop(serverSocket!!)
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to start server", e)
@@ -88,6 +108,7 @@ object TabletServerManager {
         }
 
         serverSocket = null
+        unregisterNsdService()
         connections.values.forEach { it.close() }
         connections.clear()
         connectingUntilByRole.clear()
@@ -108,11 +129,12 @@ object TabletServerManager {
         return connections.values.map { connection ->
             ConnectedWatch(
                 watchId = connection.watchId,
-                watchName = connection.watchName,
+                watchName = displayName(connection),
                 ipAddress = connection.ipAddress,
-                role = connection.role
+                role = connection.role,
+                deviceName = connection.watchName
             )
-        }.sortedBy { it.watchName }
+        }.sortedBy { it.watchName.lowercase() }
     }
 
     fun getConnectedRoles(): Set<String> {
@@ -142,7 +164,8 @@ object TabletServerManager {
             RoleStatusInfo(
                 role = role,
                 status = status,
-                assignedWatchId = assignedWatchId
+                assignedWatchId = assignedWatchId,
+                assignedWatchName = assignedWatchId?.let { customNameFor(it) }
             )
         }
     }
@@ -163,7 +186,7 @@ object TabletServerManager {
         connections[watchId]?.let { connection ->
             connection.role = cleanRole
             markRoleConnecting(cleanRole)
-            SessionLogManager.addEntry("${connection.watchName} assigned to $cleanRole")
+            SessionLogManager.addEntry("${displayName(connection)} assigned to $cleanRole")
 
             Thread {
                 try {
@@ -205,9 +228,9 @@ object TabletServerManager {
             }.start()
 
             if (!oldRole.isNullOrBlank()) {
-                SessionLogManager.addEntry("${connection.watchName} unassigned from $oldRole")
+                SessionLogManager.addEntry("${displayName(connection)} unassigned from $oldRole")
             } else {
-                SessionLogManager.addEntry("${connection.watchName} unassigned")
+                SessionLogManager.addEntry("${displayName(connection)} unassigned")
             }
         }
 
@@ -240,38 +263,78 @@ object TabletServerManager {
         }
     }
 
-    fun sendPlayToAssigned(play: PlayMessage) {
+    /**
+     * Sends a play to every connected watch that has a role. Each watch gets only its
+     * own role-specific assignment and route.
+     *
+     * @return how many watches the play was sent to (0 if no assigned watch is connected).
+     */
+    fun sendPlayToAssigned(play: PlayMessage): Int {
         SessionLogManager.addEntry("Sending play ${play.playName}")
+
+        var sentCount = 0
 
         connections.values.forEach { connection ->
             val role = connection.role?.trim() ?: return@forEach
 
             val assignment = getAssignmentForRole(play.assignments, role)
 
-            val filteredMovements = if (role.equals("QB", ignoreCase = true)) {
-                play.movements
-            } else {
-                getMovementsForRole(play.movements, role)
-            }
+            // Send only this watch's assigned route. This keeps payloads small and
+            // prevents one player from receiving every position's route.
+            val filteredMovements = getMovementsForRole(play.movements, role)
 
-            Thread {
-                try {
-                    sendJson(
-                        connection.writer,
-                        JSONObject()
-                            .put("type", "play")
-                            .put("playName", play.playName)
-                            .put("assignment", assignment)
-                            .put("role", role)
-                            .put("movements", gson.toJson(filteredMovements))
-                    )
-                    SessionLogManager.addEntry("Play ${play.playName} sent to $role")
-                } catch (e: Exception) {
-                    Log.e(TAG, "Send play failed", e)
-                    SessionLogManager.addEntry("Play send failed for $role")
+            try {
+                connection.sender.execute {
+                    try {
+                        sendJson(
+                            connection.writer,
+                            JSONObject()
+                                .put("type", "play")
+                                .put("playName", play.playName)
+                                .put("assignment", assignment)
+                                .put("role", role)
+                                .put("movements", gson.toJson(filteredMovements))
+                        )
+                        SessionLogManager.addEntry("Play ${play.playName} sent to $role")
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Send play failed", e)
+                        SessionLogManager.addEntry("Play send failed for $role")
+                    }
                 }
-            }.start()
+                sentCount++
+            } catch (e: Exception) {
+                Log.e(TAG, "Could not queue play for $role", e)
+                SessionLogManager.addEntry("Play send failed for $role")
+            }
         }
+
+        return sentCount
+    }
+
+    /** Gives a watch a custom name (blank restores the device name). */
+    fun renameWatch(watchId: String, newName: String) {
+        val context = appContext ?: return
+        val connection = connections[watchId]
+        val oldName = connection?.let { displayName(it) } ?: customNameFor(watchId) ?: "Watch $watchId"
+
+        WatchNameStore.setCustomName(context, watchId, newName)
+
+        val shownNow = connection?.let { displayName(it) } ?: customNameFor(watchId) ?: "Watch $watchId"
+        if (shownNow != oldName) {
+            SessionLogManager.addEntry("$oldName renamed to $shownNow")
+        }
+        notifyListeners()
+    }
+
+    fun getCustomWatchName(watchId: String): String? = customNameFor(watchId)
+
+    private fun customNameFor(watchId: String): String? {
+        val context = appContext ?: return null
+        return WatchNameStore.getCustomName(context, watchId)
+    }
+
+    private fun displayName(connection: ClientConnection): String {
+        return customNameFor(connection.watchId) ?: connection.watchName
     }
 
     private fun clearRoleFromOtherWatches(
@@ -308,7 +371,7 @@ object TabletServerManager {
                         }
                     }.start()
 
-                    SessionLogManager.addEntry("${otherConnection.watchName} removed from $role")
+                    SessionLogManager.addEntry("${displayName(otherConnection)} removed from $role")
                 }
             }
         }
@@ -337,6 +400,55 @@ object TabletServerManager {
         }
     }
 
+
+    private fun registerNsdService() {
+        val context = appContext ?: return
+        val manager = context.getSystemService(Context.NSD_SERVICE) as NsdManager
+        nsdManager = manager
+
+        val serviceInfo = NsdServiceInfo().apply {
+            serviceName = SERVICE_NAME
+            serviceType = SERVICE_TYPE
+            port = SERVER_PORT
+        }
+
+        val listener = object : NsdManager.RegistrationListener {
+            override fun onServiceRegistered(registeredInfo: NsdServiceInfo) {
+                Log.i(TAG, "NSD registered: ${registeredInfo.serviceName}")
+            }
+
+            override fun onRegistrationFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {
+                Log.e(TAG, "NSD registration failed: $errorCode")
+                SessionLogManager.addEntry("Local discovery unavailable; server still running")
+            }
+
+            override fun onServiceUnregistered(serviceInfo: NsdServiceInfo) {
+                Log.i(TAG, "NSD unregistered")
+            }
+
+            override fun onUnregistrationFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {
+                Log.w(TAG, "NSD unregistration failed: $errorCode")
+            }
+        }
+
+        registrationListener = listener
+        manager.registerService(serviceInfo, NsdManager.PROTOCOL_DNS_SD, listener)
+    }
+
+    private fun unregisterNsdService() {
+        val manager = nsdManager
+        val listener = registrationListener
+        if (manager != null && listener != null) {
+            try {
+                manager.unregisterService(listener)
+            } catch (e: Exception) {
+                Log.w(TAG, "Unable to unregister NSD service", e)
+            }
+        }
+        registrationListener = null
+        nsdManager = null
+    }
+
     private fun acceptLoop(server: ServerSocket) {
         while (started && !server.isClosed) {
             try {
@@ -353,6 +465,7 @@ object TabletServerManager {
     private fun handleClient(socket: Socket) {
         var watchId: String? = null
         var watchName = "Watch"
+        var connection: ClientConnection? = null
 
         try {
             val reader = BufferedReader(InputStreamReader(socket.getInputStream()))
@@ -377,7 +490,7 @@ object TabletServerManager {
 
             val savedRole = getAssignedRole(watchId)
 
-            val connection = ClientConnection(
+            val newConnection = ClientConnection(
                 socket = socket,
                 reader = reader,
                 writer = writer,
@@ -387,7 +500,8 @@ object TabletServerManager {
                 role = savedRole
             )
 
-            connections[watchId] = connection
+            connection = newConnection
+            connections[watchId] = newConnection
 
             if (!savedRole.isNullOrBlank()) {
                 markRoleConnecting(savedRole)
@@ -409,7 +523,7 @@ object TabletServerManager {
                 )
             }
 
-            SessionLogManager.addEntry("$watchName connected")
+            SessionLogManager.addEntry("${displayName(newConnection)} connected")
             notifyListeners()
 
             while (started && !socket.isClosed) {
@@ -422,7 +536,7 @@ object TabletServerManager {
                     }
 
                     "delivery_ack" -> {
-                        val ackRole = msg.optString("role", connection.role ?: "Unknown").trim()
+                        val ackRole = msg.optString("role", newConnection.role ?: "Unknown").trim()
                         val ackKind = msg.optString("kind", "content")
                         val ackName = msg.optString("name", "").trim()
 
@@ -442,8 +556,14 @@ object TabletServerManager {
         } catch (e: Exception) {
             Log.e(TAG, "Client error", e)
         } finally {
-            watchId?.let { connections.remove(it) }
-            SessionLogManager.addEntry("$watchName disconnected")
+            // Only remove our own entry; a fresh reconnect from the same watch may
+            // already have replaced it.
+            connection?.let { mine ->
+                connections.remove(mine.watchId, mine)
+                mine.close()
+            }
+            val shownName = watchId?.let { customNameFor(it) } ?: watchName
+            SessionLogManager.addEntry("$shownName disconnected")
             notifyListeners()
             try {
                 socket.close()
@@ -503,8 +623,11 @@ object TabletServerManager {
     }
 
     private fun sendJson(writer: BufferedWriter, json: JSONObject) {
-        writer.write(json.toString())
-        writer.newLine()
-        writer.flush()
+        // Several threads can write to the same watch; keep each message in one piece.
+        synchronized(writer) {
+            writer.write(json.toString())
+            writer.newLine()
+            writer.flush()
+        }
     }
 }

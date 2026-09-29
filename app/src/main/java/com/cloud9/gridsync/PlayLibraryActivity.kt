@@ -13,7 +13,6 @@ import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.cloud9.gridsync.database.AppDatabase
@@ -24,7 +23,7 @@ import com.cloud9.gridsync.network.TabletServerManager
 import com.google.gson.Gson
 import kotlin.concurrent.thread
 
-class PlayLibraryActivity : AppCompatActivity() {
+class PlayLibraryActivity : SwipeBackActivity() {
 
     private lateinit var playRecyclerView: RecyclerView
     private lateinit var emptyStateText: TextView
@@ -51,7 +50,7 @@ class PlayLibraryActivity : AppCompatActivity() {
         sortSpinner = findViewById(R.id.sortSpinner)
 
         backButton.setOnClickListener {
-            finish()
+            goBack()
         }
 
         trashButton.setOnClickListener {
