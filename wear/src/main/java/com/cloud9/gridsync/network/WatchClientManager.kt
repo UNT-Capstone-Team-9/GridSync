@@ -1,7 +1,3 @@
-
-/*
-// NEW EMULATOR FALLBACK CODE HERE
-// This code uses 10.0.2.2 and port 6001.
 package com.cloud9.gridsync.network
 
 import android.content.Context
@@ -10,524 +6,302 @@ import android.net.nsd.NsdServiceInfo
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
-import android.provider.Settings
 import android.util.Log
 import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.BufferedWriter
 import java.io.InputStreamReader
 import java.io.OutputStreamWriter
+import java.net.InetSocketAddress
 import java.net.Socket
+import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.concurrent.thread
 
 object WatchClientManager {
 
     private const val TAG = "WatchClientManager"
-
-    interface Listener {
-        fun onStatusChanged(status: String)
-        fun onRoleChanged(role: String?)
-        fun onPlayReceived(play: PlayMessage)
-    }
-
     private const val SERVICE_TYPE = "_gridsync._tcp."
     private const val PAIR_CODE = "CLOUD9"
+    private const val CONNECT_TIMEOUT_MS = 4000
+    private const val RECONNECT_DELAY_MS = 3000L
+    private const val PING_INTERVAL_MS = 10000L
 
-    private const val EMULATOR_FALLBACK_HOST = "10.0.2.2"
-    private const val EMULATOR_FALLBACK_PORT = 6001
+    interface WatchMessageListener {
+        fun onConnectionChanged(isConnected: Boolean)
+        fun onRoleChanged(role: String)
+        fun onPlayReceived(playMessage: String)
+    }
 
     private val mainHandler = Handler(Looper.getMainLooper())
+    private val connecting = AtomicBoolean(false)
 
-    @Volatile
-    private var started = false
+    @Volatile private var shouldRun = false
+    @Volatile private var connected = false
+    @Volatile private var listener: WatchMessageListener? = null
 
-    private var listener: Listener? = null
+    private var appContext: Context? = null
+    private var watchId: String = "unknown_watch"
     private var nsdManager: NsdManager? = null
     private var discoveryListener: NsdManager.DiscoveryListener? = null
-
     private var socket: Socket? = null
-    private var reader: BufferedReader? = null
     private var writer: BufferedWriter? = null
 
-    fun start(context: Context, newListener: Listener) {
-        listener = newListener
+    private val reconnectRunnable = Runnable {
+        if (shouldRun && !connected) startDiscovery()
+    }
 
-        if (started) {
-            Log.d(TAG, "Already started")
-            postStatus("Searching for tablet")
-            return
+    private val pingRunnable = object : Runnable {
+        override fun run() {
+            if (!shouldRun || !connected) return
+            sendJsonSafely(JSONObject().put("type", "ping"))
+            mainHandler.postDelayed(this, PING_INTERVAL_MS)
         }
+    }
 
-        started = true
+    fun setListener(newListener: WatchMessageListener) {
+        listener = newListener
+        postConnection(connected)
+    }
 
-        if (isProbablyEmulator()) {
-            Log.d(TAG, "Using emulator direct connect fallback")
-            postStatus("Connecting to tablet")
-            connectDirect(context.applicationContext, EMULATOR_FALLBACK_HOST, EMULATOR_FALLBACK_PORT)
+    fun clearListener() {
+        listener = null
+    }
+
+    fun connect(context: Context, watchId: String) {
+        appContext = context.applicationContext
+        this.watchId = watchId
+        shouldRun = true
+        mainHandler.removeCallbacks(reconnectRunnable)
+        if (connected) {
+            postConnection(true)
         } else {
-            Log.d(TAG, "Starting watch client")
-            discoverTablet(context.applicationContext)
+            startDiscovery()
         }
     }
 
-    fun stop() {
-        started = false
-
-        try {
-            discoveryListener?.let { nsdManager?.stopServiceDiscovery(it) }
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to stop discovery", e)
-        }
-
-        discoveryListener = null
-        nsdManager = null
-
-        try {
-            socket?.close()
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to close socket", e)
-        }
-
-        socket = null
-        reader = null
-        writer = null
-
-        Log.d(TAG, "Watch client stopped")
+    fun disconnect() {
+        shouldRun = false
+        connected = false
+        connecting.set(false)
+        mainHandler.removeCallbacks(reconnectRunnable)
+        mainHandler.removeCallbacks(pingRunnable)
+        stopDiscovery()
+        closeSocket()
+        postConnection(false)
     }
 
-    private fun discoverTablet(context: Context) {
-        postStatus("Searching for tablet")
-        Log.d(TAG, "Starting NSD discovery")
+    private fun startDiscovery() {
+        val context = appContext ?: return
+        if (!shouldRun || connected || connecting.get()) return
+        if (discoveryListener != null) return
 
-        nsdManager = context.getSystemService(Context.NSD_SERVICE) as NsdManager
+        val manager = context.getSystemService(Context.NSD_SERVICE) as NsdManager
+        nsdManager = manager
 
-        discoveryListener = object : NsdManager.DiscoveryListener {
-            override fun onStartDiscoveryFailed(serviceType: String, errorCode: Int) {
-                Log.e(TAG, "Discovery failed code $errorCode")
-                postStatus("Discovery failed")
-            }
-
-            override fun onStopDiscoveryFailed(serviceType: String, errorCode: Int) {
-                Log.e(TAG, "Stop discovery failed code $errorCode")
-            }
-
+        val discovery = object : NsdManager.DiscoveryListener {
             override fun onDiscoveryStarted(serviceType: String) {
-                Log.d(TAG, "Discovery started")
-                postStatus("Searching for tablet")
-            }
-
-            override fun onDiscoveryStopped(serviceType: String) {
-                Log.d(TAG, "Discovery stopped")
+                Log.d(TAG, "Searching local network for GridSync tablet")
             }
 
             override fun onServiceFound(serviceInfo: NsdServiceInfo) {
-                Log.d(TAG, "Service found ${serviceInfo.serviceName} ${serviceInfo.serviceType}")
-
-                if (serviceInfo.serviceType != SERVICE_TYPE) {
-                    return
-                }
-
-                nsdManager?.resolveService(
-                    serviceInfo,
-                    object : NsdManager.ResolveListener {
-                        override fun onResolveFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {
-                            Log.e(TAG, "Resolve failed code $errorCode")
-                            postStatus("Resolve failed")
-                        }
-
-                        override fun onServiceResolved(resolvedServiceInfo: NsdServiceInfo) {
-                            Log.d(
-                                TAG,
-                                "Service resolved host=${resolvedServiceInfo.host} port=${resolvedServiceInfo.port}"
-                            )
-                            connectSocket(context, resolvedServiceInfo.host?.hostAddress, resolvedServiceInfo.port)
-                        }
-                    }
-                )
+                if (!shouldRun || connected || connecting.get()) return
+                if (!serviceInfo.serviceType.trimEnd('.').equals(SERVICE_TYPE.trimEnd('.'), ignoreCase = true)) return
+                resolveService(manager, serviceInfo)
             }
 
             override fun onServiceLost(serviceInfo: NsdServiceInfo) {
-                Log.d(TAG, "Service lost ${serviceInfo.serviceName}")
-                postStatus("Tablet lost")
-            }
-        }
-
-        nsdManager?.discoverServices(
-            SERVICE_TYPE,
-            NsdManager.PROTOCOL_DNS_SD,
-            discoveryListener
-        )
-    }
-
-    private fun connectDirect(context: Context, host: String, port: Int) {
-        Log.d(TAG, "Direct connect to host=$host port=$port")
-        connectSocket(context, host, port)
-    }
-
-    private fun connectSocket(context: Context, host: String?, port: Int) {
-        Thread {
-            try {
-                val safeHost = host ?: run {
-                    Log.e(TAG, "Resolved service had no host")
-                    postStatus("No tablet host")
-                    return@Thread
-                }
-
-                try {
-                    discoveryListener?.let { nsdManager?.stopServiceDiscovery(it) }
-                } catch (_: Exception) {
-                }
-
-                Log.d(TAG, "Connecting to host=$safeHost port=$port")
-
-                val newSocket = Socket(safeHost, port)
-                val newReader = BufferedReader(InputStreamReader(newSocket.getInputStream()))
-                val newWriter = BufferedWriter(OutputStreamWriter(newSocket.getOutputStream()))
-
-                socket = newSocket
-                reader = newReader
-                writer = newWriter
-
-                val hello = JSONObject()
-                    .put("type", "hello")
-                    .put("watchId", getWatchId(context))
-                    .put("watchName", getWatchName())
-                    .put("pairCode", PAIR_CODE)
-
-                sendJson(newWriter, hello)
-                Log.d(TAG, "Hello sent $hello")
-
-                while (started && !newSocket.isClosed) {
-                    val line = newReader.readLine() ?: break
-                    Log.d(TAG, "Message received $line")
-
-                    val message = JSONObject(line)
-
-                    when (message.optString("type")) {
-                        "accepted" -> {
-                            postStatus("Connected")
-                        }
-
-                        "reject" -> {
-                            postStatus("Pair failed")
-                            newSocket.close()
-                            break
-                        }
-
-                        "role" -> {
-                            val role = message.optString("role")
-                            mainHandler.post {
-                                listener?.onRoleChanged(role)
-                                listener?.onStatusChanged("Connected as $role")
-                            }
-                        }
-
-                        "play" -> {
-                            val play = PlayMessage(
-                                playName = message.optString("playName"),
-                                assignment = message.optString("assignment"),
-                                imageResourceName = message.optString("imageResourceName"),
-                                role = message.optString("role")
-                            )
-                            mainHandler.post {
-                                listener?.onPlayReceived(play)
-                            }
-                        }
-
-                        "pong" -> {
-                        }
-                    }
-                }
-
-                postStatus("Disconnected")
-            } catch (e: Exception) {
-                Log.e(TAG, "Connection failed", e)
-                postStatus("Connection failed")
-            }
-        }.start()
-    }
-
-    private fun getWatchId(context: Context): String {
-        return Settings.Secure.getString(
-            context.contentResolver,
-            Settings.Secure.ANDROID_ID
-        ) ?: "unknown_watch"
-    }
-
-    private fun getWatchName(): String {
-        return "Watch ${Build.MODEL}"
-    }
-
-    private fun isProbablyEmulator(): Boolean {
-        return Build.FINGERPRINT.contains("generic", true) ||
-                Build.MODEL.contains("Emulator", true) ||
-                Build.HARDWARE.contains("ranchu", true) ||
-                Build.PRODUCT.contains("sdk", true)
-    }
-
-    private fun postStatus(status: String) {
-        mainHandler.post {
-            listener?.onStatusChanged(status)
-        }
-    }
-
-    private fun sendJson(writer: BufferedWriter, json: JSONObject) {
-        writer.write(json.toString())
-        writer.newLine()
-        writer.flush()
-    }
-}
-*/
-
-
-// ORIGINAL CODE IS HERE For real devices
-// This code uses NSD to find the tablet automatically.
-
-package com.cloud9.gridsync.network
-
-import android.content.Context
-import android.net.nsd.NsdManager
-import android.net.nsd.NsdServiceInfo
-import android.os.Build
-import android.os.Handler
-import android.os.Looper
-import android.provider.Settings
-import android.util.Log
-import org.json.JSONObject
-import java.io.BufferedReader
-import java.io.BufferedWriter
-import java.io.InputStreamReader
-import java.io.OutputStreamWriter
-import java.net.Socket
-
-object WatchClientManager {
-
-    private const val TAG = "WatchClientManager"
-
-    interface Listener {
-        fun onStatusChanged(status: String)
-        fun onRoleChanged(role: String?)
-        fun onPlayReceived(play: PlayMessage)
-    }
-
-    private const val SERVICE_TYPE = "_gridsync._tcp"
-    private const val PAIR_CODE = "CLOUD9"
-
-    private val mainHandler = Handler(Looper.getMainLooper())
-
-    @Volatile
-    private var started = false
-
-    private var listener: Listener? = null
-    private var nsdManager: NsdManager? = null
-    private var discoveryListener: NsdManager.DiscoveryListener? = null
-
-    private var socket: Socket? = null
-    private var reader: BufferedReader? = null
-    private var writer: BufferedWriter? = null
-
-    fun start(context: Context, newListener: Listener) {
-        listener = newListener
-
-        if (started) {
-            Log.d(TAG, "Already started")
-            postStatus("Searching for tablet")
-            return
-        }
-
-        started = true
-        Log.d(TAG, "Starting watch client")
-        discoverTablet(context.applicationContext)
-    }
-
-    fun stop() {
-        started = false
-
-        try {
-            discoveryListener?.let { nsdManager?.stopServiceDiscovery(it) }
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to stop discovery", e)
-        }
-
-        discoveryListener = null
-        nsdManager = null
-
-        try {
-            socket?.close()
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to close socket", e)
-        }
-
-        socket = null
-        reader = null
-        writer = null
-
-        Log.d(TAG, "Watch client stopped")
-    }
-
-    private fun discoverTablet(context: Context) {
-        postStatus("Searching for tablet")
-        Log.d(TAG, "Starting NSD discovery")
-
-        nsdManager = context.getSystemService(Context.NSD_SERVICE) as NsdManager
-
-        discoveryListener = object : NsdManager.DiscoveryListener {
-            override fun onStartDiscoveryFailed(serviceType: String, errorCode: Int) {
-                Log.e(TAG, "Discovery failed code $errorCode")
-                postStatus("Discovery failed")
-            }
-
-            override fun onStopDiscoveryFailed(serviceType: String, errorCode: Int) {
-                Log.e(TAG, "Stop discovery failed code $errorCode")
-            }
-
-            override fun onDiscoveryStarted(serviceType: String) {
-                Log.d(TAG, "Discovery started")
-                postStatus("Searching for tablet")
+                Log.d(TAG, "GridSync service lost: ${serviceInfo.serviceName}")
             }
 
             override fun onDiscoveryStopped(serviceType: String) {
-                Log.d(TAG, "Discovery stopped")
+                discoveryListener = null
             }
 
-            override fun onServiceFound(serviceInfo: NsdServiceInfo) {
-                Log.d(TAG, "Service found ${serviceInfo.serviceName} ${serviceInfo.serviceType}")
+            override fun onStartDiscoveryFailed(serviceType: String, errorCode: Int) {
+                Log.e(TAG, "NSD discovery failed: $errorCode")
+                discoveryListener = null
+                scheduleReconnect()
+            }
 
-                if (serviceInfo.serviceType != SERVICE_TYPE) {
+            override fun onStopDiscoveryFailed(serviceType: String, errorCode: Int) {
+                Log.w(TAG, "NSD stop failed: $errorCode")
+                discoveryListener = null
+            }
+        }
+
+        discoveryListener = discovery
+        try {
+            manager.discoverServices(SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, discovery)
+        } catch (e: Exception) {
+            Log.e(TAG, "Unable to start NSD discovery", e)
+            discoveryListener = null
+            scheduleReconnect()
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun resolveService(manager: NsdManager, serviceInfo: NsdServiceInfo) {
+        if (!connecting.compareAndSet(false, true)) return
+
+        manager.resolveService(serviceInfo, object : NsdManager.ResolveListener {
+            override fun onResolveFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {
+                Log.w(TAG, "NSD resolve failed: $errorCode")
+                connecting.set(false)
+            }
+
+            override fun onServiceResolved(resolved: NsdServiceInfo) {
+                val host = resolved.host?.hostAddress
+                val port = resolved.port
+                if (host.isNullOrBlank() || port <= 0) {
+                    connecting.set(false)
                     return
                 }
-
-                nsdManager?.resolveService(
-                    serviceInfo,
-                    object : NsdManager.ResolveListener {
-                        override fun onResolveFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {
-                            Log.e(TAG, "Resolve failed code $errorCode")
-                            postStatus("Resolve failed")
-                        }
-
-                        override fun onServiceResolved(resolvedServiceInfo: NsdServiceInfo) {
-                            Log.d(TAG, "Service resolved host=${resolvedServiceInfo.host} port=${resolvedServiceInfo.port}")
-                            connectToTablet(context, resolvedServiceInfo)
-                        }
-                    }
-                )
+                connectSocket(host, port)
             }
-
-            override fun onServiceLost(serviceInfo: NsdServiceInfo) {
-                Log.d(TAG, "Service lost ${serviceInfo.serviceName}")
-                postStatus("Tablet lost")
-            }
-        }
-
-        nsdManager?.discoverServices(
-            SERVICE_TYPE,
-            NsdManager.PROTOCOL_DNS_SD,
-            discoveryListener
-        )
+        })
     }
 
-    private fun connectToTablet(context: Context, serviceInfo: NsdServiceInfo) {
-        Thread {
+    private fun connectSocket(host: String, port: Int) {
+        thread(name = "GridSync-Watch-Connect") {
+            var newSocket: Socket? = null
             try {
-                val host = serviceInfo.host ?: run {
-                    Log.e(TAG, "Resolved service had no host")
-                    postStatus("No tablet host")
-                    return@Thread
-                }
+                if (!shouldRun) return@thread
 
-                try {
-                    discoveryListener?.let { nsdManager?.stopServiceDiscovery(it) }
-                } catch (_: Exception) {
-                }
+                newSocket = Socket()
+                newSocket.tcpNoDelay = true
+                newSocket.keepAlive = true
+                newSocket.connect(InetSocketAddress(host, port), CONNECT_TIMEOUT_MS)
 
-                Log.d(TAG, "Connecting to host=$host port=${serviceInfo.port}")
-
-                val newSocket = Socket(host, serviceInfo.port)
-                val newReader = BufferedReader(InputStreamReader(newSocket.getInputStream()))
+                val reader = BufferedReader(InputStreamReader(newSocket.getInputStream()))
                 val newWriter = BufferedWriter(OutputStreamWriter(newSocket.getOutputStream()))
 
-                socket = newSocket
-                reader = newReader
-                writer = newWriter
-
-                val hello = JSONObject()
+                sendJson(newWriter, JSONObject()
                     .put("type", "hello")
-                    .put("watchId", getWatchId(context))
-                    .put("watchName", getWatchName())
                     .put("pairCode", PAIR_CODE)
+                    .put("watchId", watchId)
+                    .put("watchName", "${Build.MANUFACTURER} ${Build.MODEL}".trim()))
 
-                sendJson(newWriter, hello)
-                Log.d(TAG, "Hello sent $hello")
-
-                while (started && !newSocket.isClosed) {
-                    val line = newReader.readLine() ?: break
-                    Log.d(TAG, "Message received $line")
-
-                    val message = JSONObject(line)
-
-                    when (message.optString("type")) {
-                        "accepted" -> {
-                            postStatus("Connected")
-                        }
-
-                        "reject" -> {
-                            postStatus("Pair failed")
-                            newSocket.close()
-                            break
-                        }
-
-                        "role" -> {
-                            val role = message.optString("role")
-                            mainHandler.post {
-                                listener?.onRoleChanged(role)
-                                listener?.onStatusChanged("Connected as $role")
-                            }
-                        }
-
-                        "play" -> {
-                            val play = PlayMessage(
-                                playName = message.optString("playName"),
-                                assignment = message.optString("assignment"),
-                                imageResourceName = message.optString("imageResourceName"),
-                                role = message.optString("role")
-                            )
-                            mainHandler.post {
-                                listener?.onPlayReceived(play)
-                            }
-                        }
-
-                        "pong" -> {
-                        }
-                    }
+                val firstLine = reader.readLine() ?: throw IllegalStateException("Tablet closed connection")
+                val firstMessage = JSONObject(firstLine)
+                if (firstMessage.optString("type") != "accepted") {
+                    throw IllegalStateException("Tablet rejected pairing")
                 }
 
-                postStatus("Disconnected")
+                socket = newSocket
+                writer = newWriter
+                connected = true
+                connecting.set(false)
+                stopDiscovery()
+                postConnection(true)
+                mainHandler.removeCallbacks(pingRunnable)
+                mainHandler.postDelayed(pingRunnable, PING_INTERVAL_MS)
+
+                listenLoop(reader, newSocket)
             } catch (e: Exception) {
-                Log.e(TAG, "Connection failed", e)
-                postStatus("Connection failed")
+                Log.w(TAG, "Connection attempt failed: ${e.message}")
+                try { newSocket?.close() } catch (_: Exception) {}
+                connected = false
+                connecting.set(false)
+                postConnection(false)
+                if (shouldRun) scheduleReconnect()
             }
-        }.start()
-    }
-
-    private fun getWatchId(context: Context): String {
-        return Settings.Secure.getString(
-            context.contentResolver,
-            Settings.Secure.ANDROID_ID
-        ) ?: "unknown_watch"
-    }
-
-    private fun getWatchName(): String {
-        return "Watch ${Build.MODEL}"
-    }
-
-    private fun postStatus(status: String) {
-        mainHandler.post {
-            listener?.onStatusChanged(status)
         }
     }
 
-    private fun sendJson(writer: BufferedWriter, json: JSONObject) {
-        writer.write(json.toString())
-        writer.newLine()
-        writer.flush()
+    private fun listenLoop(reader: BufferedReader, activeSocket: Socket) {
+        try {
+            while (shouldRun && connected && !activeSocket.isClosed) {
+                val line = reader.readLine() ?: break
+                val message = JSONObject(line)
+                when (message.optString("type")) {
+                    "role" -> postRole(message.optString("role", "Unassigned"))
+                    "play" -> {
+                        val role = message.optString("role", "Unassigned")
+                        val playName = message.optString("playName", "Play")
+                        val assignment = message.optString("assignment", "Follow your assigned route")
+                        postRole(role)
+                        sendDeliveryAck(role, "play", playName)
+                        postPlay("$playName\n\n$assignment")
+                    }
+                    "text_message" -> {
+                        val role = message.optString("role", "Unassigned")
+                        val text = message.optString("message", "")
+                        postRole(role)
+                        sendDeliveryAck(role, "text_message", "")
+                        postPlay(text)
+                    }
+                    "pong" -> Log.d(TAG, "Tablet heartbeat received")
+                }
+            }
+        } catch (e: Exception) {
+            if (shouldRun) Log.w(TAG, "Connection lost: ${e.message}")
+        } finally {
+            if (socket === activeSocket) {
+                connected = false
+                mainHandler.removeCallbacks(pingRunnable)
+                closeSocket()
+                postConnection(false)
+                if (shouldRun) scheduleReconnect()
+            }
+        }
+    }
+
+    private fun sendDeliveryAck(role: String, kind: String, name: String) {
+        sendJsonSafely(JSONObject()
+            .put("type", "delivery_ack")
+            .put("role", role)
+            .put("kind", kind)
+            .put("name", name))
+    }
+
+    private fun sendJsonSafely(json: JSONObject) {
+        val currentWriter = writer ?: return
+        thread(name = "GridSync-Watch-Send") {
+            try {
+                synchronized(currentWriter) { sendJson(currentWriter, json) }
+            } catch (e: Exception) {
+                Log.w(TAG, "Send failed: ${e.message}")
+            }
+        }
+    }
+
+    private fun sendJson(target: BufferedWriter, json: JSONObject) {
+        target.write(json.toString())
+        target.newLine()
+        target.flush()
+    }
+
+    private fun scheduleReconnect() {
+        if (!shouldRun) return
+        mainHandler.removeCallbacks(reconnectRunnable)
+        mainHandler.postDelayed(reconnectRunnable, RECONNECT_DELAY_MS)
+    }
+
+    private fun stopDiscovery() {
+        val manager = nsdManager
+        val discovery = discoveryListener
+        if (manager != null && discovery != null) {
+            try { manager.stopServiceDiscovery(discovery) } catch (_: Exception) {}
+        }
+        discoveryListener = null
+        nsdManager = null
+    }
+
+    private fun closeSocket() {
+        try { socket?.close() } catch (_: Exception) {}
+        socket = null
+        writer = null
+    }
+
+    private fun postConnection(value: Boolean) {
+        mainHandler.post { listener?.onConnectionChanged(value) }
+    }
+
+    private fun postRole(role: String) {
+        mainHandler.post { listener?.onRoleChanged(role) }
+    }
+
+    private fun postPlay(message: String) {
+        mainHandler.post { listener?.onPlayReceived(message) }
     }
 }

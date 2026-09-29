@@ -22,3 +22,13 @@ Professor Diana Rabah
 ## TAs
 Jordan Black  
 Sai Sri Harsha Chakravarthula  
+
+
+## Update Notes (v3)
+- **Swipe to go back:** swipe left-to-right on any inner screen (the back button still works). On the Create Play canvas the swipe must start at the very left edge so drawing never triggers it.
+- **Custom watch names:** Assign Watches > tap a watch > *Rename watch* (e.g. "QB Watch"). The name is used across the app and is remembered per watch.
+- **Back button:** new minimal "<" chevron on every screen.
+- **Session Activity Log:** grouped by date (Today / Yesterday / full date) into Session 1, 2, ...; tap a session to expand, trash icon deletes one session, "Clear all" deletes everything. Logs are now saved between app launches.
+- **Hurry-Up Package:** dashboard tile opens the Hurry-Up screen. Pick plays from the Play Library with the list icon, tap a play to send it instantly to all assigned watches (each watch gets only its own role assignment), long-press a play to remove it.
+- **Settings:** new gear icon and a card-based Settings page (Play Backup, Session Activity Log).
+- **Sending reliability:** plays to each watch are now queued in order and written one at a time, so rapid Hurry-Up taps can't interleave or reorder.

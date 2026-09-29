@@ -60,6 +60,7 @@ class WatchDashboardActivity : AppCompatActivity(),
 
     override fun onDestroy() {
         super.onDestroy()
+        WatchClientManager.disconnect()
         WatchClientManager.clearListener()
         handler.removeCallbacksAndMessages(null)
     }
