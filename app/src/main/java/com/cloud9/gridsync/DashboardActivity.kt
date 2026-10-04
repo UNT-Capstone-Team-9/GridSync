@@ -26,7 +26,7 @@ class DashboardActivity : AppCompatActivity(),
     private lateinit var assignWatchesCard: LinearLayout
     private lateinit var sendPlayCard: LinearLayout
     private lateinit var createPlayCard: LinearLayout
-    private lateinit var playLibraryCard: LinearLayout
+    private lateinit var playsCard: LinearLayout
 
     private lateinit var networkStatusText: TextView
     private lateinit var watchCountText: TextView
@@ -63,7 +63,7 @@ class DashboardActivity : AppCompatActivity(),
         assignWatchesCard = findViewById(R.id.assignWatchesCard)
         sendPlayCard = findViewById(R.id.sendPlayCard)
         createPlayCard = findViewById(R.id.createPlayCard)
-        playLibraryCard = findViewById(R.id.playLibraryCard)
+        playsCard = findViewById(R.id.playsCard)
 
         networkStatusText = findViewById(R.id.networkStatusText)
         watchCountText = findViewById(R.id.watchCountText)
@@ -74,14 +74,16 @@ class DashboardActivity : AppCompatActivity(),
             startActivity(Intent(this, CreatePlayActivity::class.java))
         }
 
-        playLibraryCard.setOnClickListener {
-            startActivity(Intent(this, PlayLibraryActivity::class.java))
+        // Plays opens the hub holding the Play Library and Hurry-Up Packages.
+        playsCard.setOnClickListener {
+            startActivity(Intent(this, PlaysActivity::class.java))
         }
 
         assignWatchesCard.setOnClickListener {
             startActivity(Intent(this, AssignWatchesActivity::class.java))
         }
 
+        // Shown to the coach as Send Messages. It sends text to selected roles, not plays.
         sendPlayCard.setOnClickListener {
             startActivity(Intent(this, SendPlayActivity::class.java))
         }

@@ -120,6 +120,7 @@
             android:id="@+id/playNameText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:ellipsize="end"
             android:layout_marginBottom="4dp"
             android:gravity="center"
             android:maxLines="2"
@@ -128,23 +129,34 @@
             android:textSize="26sp"
             android:textStyle="bold" />
 
+        <!-- The route takes whatever the text leaves, so the text above and below it is kept
+             small whenever a route is shown (see WatchDashboardActivity). -->
+        <com.cloud9.gridsync.ui.WatchRouteView
+            android:id="@+id/watchRouteView"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <!-- The QB's full play, drawn exactly like the Play Library card. -->
+        <com.cloud9.gridsync.ui.PlayPreviewView
+            android:id="@+id/fullPlayView"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:visibility="gone" />
+
         <TextView
             android:id="@+id/playText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="8dp"
+            android:layout_marginTop="4dp"
+            android:ellipsize="end"
             android:gravity="center"
             android:lineSpacingExtra="2dp"
             android:maxLines="3"
             android:text="Scanning for tablet..."
             android:textColor="#FFFFFF"
             android:textSize="22sp" />
-
-        <com.cloud9.gridsync.ui.WatchRouteView
-            android:id="@+id/watchRouteView"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1" />
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

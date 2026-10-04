@@ -265,6 +265,8 @@ object TabletServerManager {
                             .put("displayType", payload.displayType)
                             .put("movements", gson.toJson(payload.movements))
                             .put("players", gson.toJson(payload.players))
+                            .put("routeOptions", gson.toJson(payload.options))
+                            .put("routeColors", gson.toJson(payload.routeColors))
                     )
                     SessionLogManager.addEntry("Play ${play.playName} sent to $role")
                 } catch (e: Exception) {

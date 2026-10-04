@@ -121,7 +121,7 @@
         android:orientation="vertical"
         android:padding="20dp"
         app:layout_constraintBottom_toTopOf="@id/assignWatchesCard"
-        app:layout_constraintEnd_toStartOf="@id/playLibraryCard"
+        app:layout_constraintEnd_toStartOf="@id/playsCard"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/statusBar">
 
@@ -138,10 +138,19 @@
             android:textColor="#1B263B"
             android:textSize="20sp"
             android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:gravity="center"
+            android:text="Design a formation, routes and assignments"
+            android:textColor="#5B6576"
+            android:textSize="14sp" />
     </LinearLayout>
 
     <LinearLayout
-        android:id="@+id/playLibraryCard"
+        android:id="@+id/playsCard"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_marginTop="16dp"
@@ -168,10 +177,19 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="14dp"
-            android:text="Play Library"
+            android:text="Plays"
             android:textColor="#1B263B"
             android:textSize="20sp"
             android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:gravity="center"
+            android:text="Play Library and Hurry-Up Packages"
+            android:textColor="#5B6576"
+            android:textSize="14sp" />
     </LinearLayout>
 
     <LinearLayout
@@ -206,6 +224,15 @@
             android:textColor="#1B263B"
             android:textSize="20sp"
             android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:gravity="center"
+            android:text="Pair player watches with roles"
+            android:textColor="#5B6576"
+            android:textSize="14sp" />
     </LinearLayout>
 
     <LinearLayout
@@ -226,7 +253,7 @@
         app:layout_constraintBottom_toTopOf="@id/sessionLogPanel"
         app:layout_constraintEnd_toStartOf="@id/playerStatusPanel"
         app:layout_constraintStart_toEndOf="@id/assignWatchesCard"
-        app:layout_constraintTop_toBottomOf="@id/playLibraryCard">
+        app:layout_constraintTop_toBottomOf="@id/playsCard">
 
         <ImageView
             android:layout_width="50dp"
@@ -237,10 +264,19 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="14dp"
-            android:text="Send Play"
+            android:text="Send Messages"
             android:textColor="#1B263B"
             android:textSize="20sp"
             android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:gravity="center"
+            android:text="Send text instructions or messages to selected player roles"
+            android:textColor="#5B6576"
+            android:textSize="14sp" />
     </LinearLayout>
 
     <LinearLayout

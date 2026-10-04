@@ -10,6 +10,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.cloud9.gridsync.database.AppDatabase
+import com.cloud9.gridsync.database.HurryUpRepository
 import com.cloud9.gridsync.network.PlayMessage
 import com.cloud9.gridsync.network.SessionLogManager
 import com.google.gson.Gson
@@ -120,6 +121,7 @@ class TrashActivity : AppCompatActivity() {
             try {
                 val dao = AppDatabase.getDatabase(applicationContext).playDao()
                 dao.permanentlyDeleteByName(play.playName)
+                HurryUpRepository.onPlayPermanentlyDeleted(applicationContext, play.playName)
 
                 runOnUiThread {
                     SessionLogManager.addEntry("Deleted forever ${play.playName}")

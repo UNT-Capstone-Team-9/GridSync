@@ -14,6 +14,12 @@ object PlayFormation {
 
     const val ASSIGNMENT_CUSTOM = "Custom"
 
+    // Route colours used by the Play Library cards and every watch, the way paper playbooks
+    // colour receivers. Kept here so the tablet and the watches always agree on a player's colour.
+    val routePalette = listOf(
+        "#FFD54F", "#4FC3F7", "#F06292", "#81C784", "#FF8A65", "#BA68C8", "#4DD0E1", "#E6EE9C"
+    )
+
     private val linemanTypes = setOf("LT", "LG", "C", "RG", "RT", "OL")
 
     // The first option of each list is a placeholder that is stored as an empty assignmentType.
@@ -32,6 +38,7 @@ object PlayFormation {
     val skillAssignments = listOf(
         "None",
         "Route",
+        "Option Route",
         "Block",
         "Pass Protect",
         "Ball Carrier",
@@ -46,23 +53,46 @@ object PlayFormation {
         ASSIGNMENT_CUSTOM
     )
 
+    // options are each player's dashed option branches, keyed the same way as movements.
     data class SwapResult(
         val players: List<PlayerPosition>,
-        val movements: Map<String, List<PointData>>
+        val movements: Map<String, List<PointData>>,
+        val options: Map<String, List<RouteBranch>> = emptyMap()
     )
 
     data class LoadedFormation(
         val players: List<PlayerPosition>,
         val movements: Map<String, List<PointData>>,
-        val droppedRouteKeys: List<String>
+        val droppedRouteKeys: List<String>,
+        val options: Map<String, List<RouteBranch>> = emptyMap()
     )
 
     data class WatchPayload(
         val displayType: String,
         val assignment: String,
         val movements: Map<String, List<PointData>>,
-        val players: List<PlayerPosition>
+        val players: List<PlayerPosition>,
+        val options: Map<String, List<RouteBranch>> = emptyMap(),
+        // Route colour per role label, matching the Play Library card.
+        val routeColors: Map<String, String> = emptyMap()
     )
+
+    // Each active player with a route gets the next palette colour, left to right, so colours
+    // stay stable for the same formation. Returns colours keyed by player id.
+    fun routeColors(
+        players: List<PlayerPosition>,
+        movements: Map<String, List<PointData>>
+    ): Map<String, String> {
+        val colors = linkedMapOf<String, String>()
+        players
+            .filter { it.isActive && it.x != null && it.y != null }
+            .sortedBy { it.x }
+            .forEach { player ->
+                if ((movements[player.id]?.size ?: 0) < 2) return@forEach
+                colors[player.id] = routePalette[colors.size % routePalette.size]
+            }
+        return colors
+    }
 
     // Line of scrimmage sits at y = 0.60 and the offense faces the top of the field.
     fun defaultPlayers(): List<PlayerPosition> = listOf(
@@ -105,12 +135,13 @@ object PlayFormation {
     }
 
     // A substitution is always a swap, so the active count never changes. The incoming player
-    // takes the outgoing player's spot but none of their route, assignment or instruction.
+    // takes the outgoing player's spot but none of their route, options, assignment or instruction.
     fun swap(
         players: List<PlayerPosition>,
         movements: Map<String, List<PointData>>,
         benchId: String,
-        activeId: String
+        activeId: String,
+        options: Map<String, List<RouteBranch>> = emptyMap()
     ): SwapResult? {
         val benchIndex = players.indexOfFirst { it.id == benchId && !it.isActive }
         val activeIndex = players.indexOfFirst { it.id == activeId && it.isActive }
@@ -137,7 +168,8 @@ object PlayFormation {
 
         return SwapResult(
             players = updated,
-            movements = movements - setOf(benchId, activeId)
+            movements = movements - setOf(benchId, activeId),
+            options = options - setOf(benchId, activeId)
         )
     }
 
@@ -191,23 +223,47 @@ object PlayFormation {
         val movements = mutableMapOf<String, List<PointData>>()
         val dropped = mutableListOf<String>()
 
-        play.movements.orEmpty().forEach { (rawKey, points) ->
+        fun findPlayer(rawKey: String): PlayerPosition? {
             val key = rawKey.trim()
-            val player = players.firstOrNull { it.id == key }
+            return players.firstOrNull { it.id == key }
                 ?: players.firstOrNull { it.displayLabel.equals(key, ignoreCase = true) }
+        }
 
-            val cleanPoints = points.orEmpty().filterNotNull().map {
-                PointData(it.x.coerceIn(0f, 1f), it.y.coerceIn(0f, 1f))
-            }
+        play.movements.orEmpty().forEach { (rawKey, points) ->
+            val player = findPlayer(rawKey)
+            val cleanPoints = cleanRoute(points)
 
             if (player != null && player.isActive && cleanPoints.size >= 2) {
                 movements[player.id] = cleanPoints
             } else if (cleanPoints.size >= 2) {
-                dropped.add(key)
+                dropped.add(rawKey.trim())
             }
         }
 
-        return LoadedFormation(players, movements, dropped)
+        // An option only means something next to its main route, so options without one are dropped.
+        val options = mutableMapOf<String, List<RouteBranch>>()
+        play.routeOptions.orEmpty().forEach { (rawKey, branches) ->
+            val player = findPlayer(rawKey) ?: return@forEach
+            if (!movements.containsKey(player.id)) return@forEach
+
+            val cleanBranches = cleanBranches(branches)
+            if (cleanBranches.isNotEmpty()) options[player.id] = cleanBranches
+        }
+
+        return LoadedFormation(players, movements, dropped, options)
+    }
+
+    // Gson can leave nulls inside lists from hand edited or older JSON, so they are filtered here.
+    private fun cleanRoute(points: List<PointData>?): List<PointData> {
+        return points.orEmpty().filterNotNull().map {
+            PointData(it.x.coerceIn(0f, 1f), it.y.coerceIn(0f, 1f))
+        }
+    }
+
+    private fun cleanBranches(branches: List<RouteBranch>?): List<RouteBranch> {
+        return branches.orEmpty().filterNotNull()
+            .map { RouteBranch(cleanRoute(it.points)) }
+            .filter { it.points.size >= 2 }
     }
 
     fun buildAssignmentText(
@@ -237,7 +293,8 @@ object PlayFormation {
         playType: String,
         players: List<PlayerPosition>,
         movements: Map<String, List<PointData>>,
-        imageResourceName: String = ""
+        imageResourceName: String = "",
+        options: Map<String, List<RouteBranch>> = emptyMap()
     ): PlayMessage {
         val activePlayers = players.filter { it.isActive }
         val activeIds = activePlayers.map { it.id }.toSet()
@@ -245,6 +302,11 @@ object PlayFormation {
         val savedMovements = movements.filter { (id, points) ->
             id in activeIds && points.size >= 2
         }
+
+        val savedOptions = options
+            .filterKeys { it in savedMovements }
+            .mapValues { cleanBranches(it.value) }
+            .filterValues { it.isNotEmpty() }
 
         val assignments = activePlayers.associate { player ->
             player.displayLabel to buildAssignmentText(
@@ -261,7 +323,8 @@ object PlayFormation {
             imageResourceName = imageResourceName,
             formationName = formationName,
             playType = playType,
-            players = players
+            players = players,
+            routeOptions = savedOptions.takeIf { it.isNotEmpty() }
         )
     }
 
@@ -272,6 +335,7 @@ object PlayFormation {
         val isQbRole = cleanRole.equals("QB", ignoreCase = true)
         val players = play.players?.filterNotNull()
         val movements = play.movements.orEmpty()
+        val options = play.routeOptions.orEmpty()
 
         if (players.isNullOrEmpty()) {
             val assignment = play.assignments.orEmpty().entries.firstOrNull {
@@ -301,6 +365,18 @@ object PlayFormation {
             movements[player.id]?.takeIf { it.size >= 2 }?.let { player.displayLabel to it }
         }.toMap()
 
+        // Colours are worked out from the whole play, so a single receiver still gets the colour
+        // the Play Library shows for them.
+        val colorsByLabel = routeColors(activePlayers, movements).mapNotNull { (id, color) ->
+            activePlayers.firstOrNull { it.id == id }?.let { it.displayLabel to color }
+        }.toMap()
+
+        // Options travel with their main route, keyed by the same watch role label.
+        val optionsByLabel = activePlayers.mapNotNull { player ->
+            if (!routesByLabel.containsKey(player.displayLabel)) return@mapNotNull null
+            cleanBranches(options[player.id]).takeIf { it.isNotEmpty() }?.let { player.displayLabel to it }
+        }.toMap()
+
         val assignment = play.assignments.orEmpty()[target.displayLabel]
             ?: buildAssignmentText(target, movements.containsKey(target.id), play.playType)
 
@@ -314,14 +390,18 @@ object PlayFormation {
                 displayType = DISPLAY_FULL_PLAY,
                 assignment = listOf(header, assignment).filter { it.isNotBlank() }.joinToString("\n"),
                 movements = routesByLabel,
-                players = activePlayers
+                players = activePlayers,
+                options = optionsByLabel,
+                routeColors = colorsByLabel
             )
         } else {
             WatchPayload(
                 displayType = DISPLAY_ROLE_SPECIFIC,
                 assignment = assignment,
                 movements = routesByLabel.filterKeys { it == target.displayLabel },
-                players = listOf(target)
+                players = listOf(target),
+                options = optionsByLabel.filterKeys { it == target.displayLabel },
+                routeColors = colorsByLabel.filterKeys { it == target.displayLabel }
             )
         }
     }

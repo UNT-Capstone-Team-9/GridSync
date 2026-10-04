@@ -2,6 +2,7 @@ package com.cloud9.gridsync.network
 
 import android.content.Context
 import android.net.wifi.WifiManager
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
@@ -23,6 +24,10 @@ object WatchClientManager {
     private const val PAIR_CODE = "CLOUD9"
     private const val RECONNECT_DELAY_MS = 5000L
 
+    // How an Android emulator reaches the Mac it runs on. With "adb forward tcp:5001 tcp:5001" on
+    // the tablet emulator, this address leads to the tablet's server.
+    private const val EMULATOR_HOST = "10.0.2.2"
+
     interface WatchMessageListener {
         fun onConnectionChanged(isConnected: Boolean)
         fun onRoleChanged(role: String)
@@ -31,6 +36,8 @@ object WatchClientManager {
             playTextMessage: String,
             movements: Map<String, List<PointData>>,
             players: List<PlayerPosition>,
+            options: Map<String, List<RouteBranch>>,
+            routeColors: Map<String, String>,
             isFullPlay: Boolean
         )
         fun onTextMessageReceived(role: String, message: String)
@@ -91,13 +98,20 @@ object WatchClientManager {
 
         thread {
             try {
+                // Emulators cannot see each other on the network and often have no Wi-Fi address,
+                // so a watch emulator goes straight to the forwarded tablet port on the Mac.
+                if (isEmulator() && tryConnect(EMULATOR_HOST, SERVER_PORT, localWatchId)) {
+                    return@thread
+                }
+
                 val wifiManager =
                     context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
 
                 val ipInt = wifiManager.connectionInfo.ipAddress
                 val ipAddress = intToIp(ipInt)
 
-                if (ipAddress.isBlank()) {
+                // No Wi-Fi connection reports 0.0.0.0, which has no subnet worth scanning.
+                if (ipInt == 0 || ipAddress.isBlank()) {
                     scheduleReconnect()
                     return@thread
                 }
@@ -198,11 +212,34 @@ object WatchClientManager {
                                 emptyList()
                             }
 
+                            // Option branches are keyed like movements. Older tablets do not send them.
+                            val optionsJson = message.optString("routeOptions", "{}")
+                            val optionsType = object : TypeToken<Map<String, List<RouteBranch>>>() {}.type
+                            val options: Map<String, List<RouteBranch>> = try {
+                                gson.fromJson<Map<String, List<RouteBranch>>>(optionsJson, optionsType)
+                                    ?.mapValues { (_, branches) ->
+                                        branches.orEmpty().filter { (it?.points?.size ?: 0) >= 2 }
+                                    }
+                                    ?.filterValues { it.isNotEmpty() }
+                                    ?: emptyMap()
+                            } catch (_: Exception) {
+                                emptyMap()
+                            }
+
+                            // Route colour per role label. Older tablets do not send it.
+                            val colorsJson = message.optString("routeColors", "{}")
+                            val colorsType = object : TypeToken<Map<String, String>>() {}.type
+                            val routeColors: Map<String, String> = try {
+                                gson.fromJson<Map<String, String>>(colorsJson, colorsType) ?: emptyMap()
+                            } catch (_: Exception) {
+                                emptyMap()
+                            }
+
                             val isFullPlay = message.optString("displayType") == PlayFormation.DISPLAY_FULL_PLAY
 
                             postRole(role)
                             sendDeliveryAck(role, "play", playName)
-                            postPlay(playName, assignment, movements, players, isFullPlay)
+                            postPlay(playName, assignment, movements, players, options, routeColors, isFullPlay)
                         }
 
                         "text_message" -> {
@@ -283,10 +320,12 @@ object WatchClientManager {
         playTextMessage: String,
         movements: Map<String, List<PointData>>,
         players: List<PlayerPosition>,
+        options: Map<String, List<RouteBranch>>,
+        routeColors: Map<String, String>,
         isFullPlay: Boolean
     ) {
         mainHandler.post {
-            listener?.onPlayReceived(playName, playTextMessage, movements, players, isFullPlay)
+            listener?.onPlayReceived(playName, playTextMessage, movements, players, options, routeColors, isFullPlay)
         }
     }
 
@@ -294,6 +333,13 @@ object WatchClientManager {
         mainHandler.post {
             listener?.onTextMessageReceived(role, message)
         }
+    }
+
+    private fun isEmulator(): Boolean {
+        return Build.HARDWARE.contains("ranchu") ||
+            Build.HARDWARE.contains("goldfish") ||
+            Build.FINGERPRINT.startsWith("generic") ||
+            Build.PRODUCT.contains("sdk")
     }
 
     private fun intToIp(ip: Int): String {

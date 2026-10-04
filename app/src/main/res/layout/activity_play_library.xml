@@ -1,50 +1,60 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#111111">
+    android:background="#111111"
+    android:orientation="vertical">
 
     <LinearLayout
         android:id="@+id/headerBar"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:paddingStart="16dp"
-        android:paddingTop="16dp"
+        android:paddingStart="8dp"
+        android:paddingTop="12dp"
         android:paddingEnd="16dp"
-        android:paddingBottom="12dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        android:paddingBottom="8dp">
 
         <ImageButton
             android:id="@+id/backButton"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:background="@android:color/transparent"
+            android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="Back"
             android:padding="10dp"
             android:src="@android:drawable/ic_media_previous"
             android:tint="#FFFFFF" />
 
-        <TextView
-            android:id="@+id/titleText"
+        <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
             android:layout_weight="1"
-            android:gravity="center"
-            android:text="Play Library"
-            android:textColor="#FFFFFF"
-            android:textSize="22sp"
-            android:textStyle="bold" />
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/titleText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="PLAY LIBRARY"
+                android:textColor="#FFFFFF"
+                android:textSize="24sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/playCountText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#7D8796"
+                android:textSize="13sp" />
+        </LinearLayout>
 
         <ImageButton
             android:id="@+id/trashButton"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:background="@android:color/transparent"
+            android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="Trash"
             android:padding="10dp"
             android:src="@android:drawable/ic_menu_delete"
@@ -52,80 +62,150 @@
     </LinearLayout>
 
     <LinearLayout
-        android:id="@+id/filterBar"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        android:layout_marginBottom="8dp"
+        android:gravity="center_vertical"
         android:orientation="horizontal"
-        app:layout_constraintTop_toBottomOf="@id/headerBar"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        android:paddingHorizontal="16dp">
 
         <EditText
             android:id="@+id/searchInput"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="44dp"
             android:layout_weight="1"
-            android:background="@android:color/white"
-            android:hint="Search plays"
-            android:padding="12dp"
-            android:textColor="#111111"
-            android:textColorHint="#666666"
-            android:singleLine="true" />
+            android:background="@drawable/playbook_input"
+            android:hint="Search plays..."
+            android:imeOptions="actionSearch"
+            android:inputType="text"
+            android:paddingHorizontal="14dp"
+            android:singleLine="true"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#6B7482"
+            android:textSize="15sp" />
 
-        <Spinner
-            android:id="@+id/sortSpinner"
-            android:layout_width="160dp"
-            android:layout_height="wrap_content"
+        <TextView
+            android:id="@+id/sortButton"
+            style="@style/PlaybookChip"
+            android:layout_height="44dp"
             android:layout_marginStart="12dp"
-            android:background="@android:color/white" />
+            android:layout_marginEnd="0dp"
+            android:text="SORT: NAME ▾" />
     </LinearLayout>
 
-    <TextView
-        android:id="@+id/emptyStateText"
-        android:layout_width="wrap_content"
+    <HorizontalScrollView
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="No plays found"
-        android:textColor="#BBBBBB"
-        android:textSize="18sp"
-        android:visibility="gone"
-        app:layout_constraintBottom_toTopOf="@id/sendButton"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/filterBar" />
+        android:layout_marginTop="12dp"
+        android:scrollbars="none">
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/playRecyclerView"
-        android:layout_width="0dp"
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="16dp">
+
+            <TextView
+                style="@style/PlaybookSectionLabel"
+                android:text="PLAY TYPE" />
+
+            <TextView
+                android:id="@+id/typeAllChip"
+                style="@style/PlaybookChip"
+                android:text="ALL" />
+
+            <TextView
+                android:id="@+id/typePassChip"
+                style="@style/PlaybookChip"
+                android:text="PASS" />
+
+            <TextView
+                android:id="@+id/typeRunChip"
+                style="@style/PlaybookChip"
+                android:text="RUN" />
+
+            <View
+                android:layout_width="1dp"
+                android:layout_height="28dp"
+                android:layout_marginHorizontal="12dp"
+                android:background="#2C313C" />
+
+            <TextView
+                style="@style/PlaybookSectionLabel"
+                android:text="BROWSE" />
+
+            <TextView
+                android:id="@+id/browseAllChip"
+                style="@style/PlaybookChip"
+                android:text="ALL PLAYS" />
+
+            <TextView
+                android:id="@+id/browseFormationChip"
+                style="@style/PlaybookChip"
+                android:text="FORMATION" />
+
+            <TextView
+                android:id="@+id/browsePersonnelChip"
+                style="@style/PlaybookChip"
+                android:text="PERSONNEL" />
+        </LinearLayout>
+    </HorizontalScrollView>
+
+    <!-- Shown while looking inside one formation or personnel group. -->
+    <LinearLayout
+        android:id="@+id/groupBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="16dp"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/groupBackButton"
+            style="@style/PlaybookChip"
+            android:text="‹ ALL FORMATIONS" />
+
+        <TextView
+            android:id="@+id/groupTitleText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textAllCaps="true"
+            android:textColor="#FCA311"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <FrameLayout
+        android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:clipToPadding="false"
-        android:paddingStart="16dp"
-        android:paddingTop="8dp"
-        android:paddingEnd="16dp"
-        android:paddingBottom="16dp"
-        app:layout_constraintBottom_toTopOf="@id/sendButton"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/filterBar" />
+        android:layout_marginTop="4dp"
+        android:layout_weight="1">
 
-    <Button
-        android:id="@+id/sendButton"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        android:layout_marginBottom="20dp"
-        android:background="@drawable/button_background_selected"
-        android:padding="16dp"
-        android:text="Send Selected Play"
-        android:textAllCaps="true"
-        android:textColor="#FFFFFF"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/playRecyclerView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingHorizontal="8dp"
+            android:paddingBottom="16dp" />
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+        <TextView
+            android:id="@+id/emptyStateText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:padding="24dp"
+            android:text="No plays found"
+            android:textColor="#7D8796"
+            android:textSize="17sp"
+            android:visibility="gone" />
+    </FrameLayout>
+
+</LinearLayout>

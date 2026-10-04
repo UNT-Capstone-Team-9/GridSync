@@ -19,12 +19,15 @@
         <activity android:name="com.cloud9.gridsync.SettingsActivity" />
         <activity android:name="com.cloud9.gridsync.SendPlayActivity" />
         <activity android:name="com.cloud9.gridsync.AssignWatchesActivity" />
+        <activity android:name="com.cloud9.gridsync.PlaysActivity" />
         <activity android:name="com.cloud9.gridsync.PlayLibraryActivity" />
         <activity
             android:name="com.cloud9.gridsync.CreatePlayActivity"
             android:windowSoftInputMode="adjustPan" />
         <activity android:name="com.cloud9.gridsync.DashboardActivity" />
         <activity android:name="com.cloud9.gridsync.TrashActivity" />
+        <activity android:name="com.cloud9.gridsync.HurryUpPackagesActivity" />
+        <activity android:name="com.cloud9.gridsync.HurryUpPackageDetailActivity" />
 
         <activity
             android:name=".MainActivity"

@@ -17,6 +17,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.cloud9.gridsync.database.AppDatabase
+import com.cloud9.gridsync.database.HurryUpRepository
 import com.cloud9.gridsync.database.PlayEntity
 import com.cloud9.gridsync.network.PlayFormation
 import com.cloud9.gridsync.network.PlayMessage
@@ -35,6 +36,7 @@ class CreatePlayActivity : AppCompatActivity(), CoachDrawingView.Listener {
     private lateinit var runButton: MaterialButton
     private lateinit var moveButton: MaterialButton
     private lateinit var routeButton: MaterialButton
+    private lateinit var optionButton: MaterialButton
     private lateinit var modeHintText: TextView
     private lateinit var selectedPlayerText: TextView
     private lateinit var assignmentSpinner: Spinner
@@ -71,6 +73,7 @@ class CreatePlayActivity : AppCompatActivity(), CoachDrawingView.Listener {
         runButton = findViewById(R.id.btnPlayTypeRun)
         moveButton = findViewById(R.id.btnMovePlayers)
         routeButton = findViewById(R.id.btnDrawRoute)
+        optionButton = findViewById(R.id.btnAddRouteOption)
         modeHintText = findViewById(R.id.tvModeHint)
         selectedPlayerText = findViewById(R.id.tvSelectedPlayer)
         assignmentSpinner = findViewById(R.id.spinnerAssignment)
@@ -91,8 +94,10 @@ class CreatePlayActivity : AppCompatActivity(), CoachDrawingView.Listener {
 
         moveButton.setOnClickListener { setMode(CoachDrawingView.Mode.MOVE) }
         routeButton.setOnClickListener { setMode(CoachDrawingView.Mode.ROUTE) }
+        optionButton.setOnClickListener { setMode(CoachDrawingView.Mode.OPTION) }
 
         findViewById<MaterialButton>(R.id.btnClearRoute).setOnClickListener { clearSelectedRoute() }
+        findViewById<MaterialButton>(R.id.btnRemoveRouteOption).setOnClickListener { removeSelectedOption() }
         findViewById<MaterialButton>(R.id.btnResetFormation).setOnClickListener { confirmResetFormation() }
         cancelSwapButton.setOnClickListener { endSwap() }
 
@@ -115,7 +120,8 @@ class CreatePlayActivity : AppCompatActivity(), CoachDrawingView.Listener {
             drawingView.getPlayers(),
             drawingView.getMovements(),
             benchId,
-            activePlayer.id
+            activePlayer.id,
+            drawingView.getRouteOptions()
         )
 
         if (result == null) {
@@ -126,7 +132,7 @@ class CreatePlayActivity : AppCompatActivity(), CoachDrawingView.Listener {
 
         val incomingLabel = result.players.first { it.id == benchId }.displayLabel
         endSwap()
-        drawingView.setFormation(result.players, result.movements)
+        drawingView.setFormation(result.players, result.movements, result.options)
         drawingView.selectPlayer(benchId)
 
         Toast.makeText(
@@ -144,6 +150,10 @@ class CreatePlayActivity : AppCompatActivity(), CoachDrawingView.Listener {
 
     override fun onSelectionNeeded() {
         Toast.makeText(this, "Tap a player to draw their route", Toast.LENGTH_SHORT).show()
+    }
+
+    override fun onRouteOptionHint(message: String) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 
     private fun setupAssignmentPanel() {
@@ -225,10 +235,13 @@ class CreatePlayActivity : AppCompatActivity(), CoachDrawingView.Listener {
         drawingView.mode = mode
         styleToggle(moveButton, mode == CoachDrawingView.Mode.MOVE)
         styleToggle(routeButton, mode == CoachDrawingView.Mode.ROUTE)
+        styleToggle(optionButton, mode == CoachDrawingView.Mode.OPTION)
 
         modeHintText.text = when (mode) {
             CoachDrawingView.Mode.MOVE -> "Drag any player to set the formation."
             CoachDrawingView.Mode.ROUTE -> "Tap a player, then drag from them to draw their route."
+            CoachDrawingView.Mode.OPTION ->
+                "Touch a point on the selected player's route, then drag the dashed option."
         }
     }
 
@@ -252,6 +265,21 @@ class CreatePlayActivity : AppCompatActivity(), CoachDrawingView.Listener {
 
         drawingView.clearRoute(player.id)
         Toast.makeText(this, "Cleared ${player.displayLabel} route", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun removeSelectedOption() {
+        val player = drawingView.getSelectedPlayer()
+        if (player == null) {
+            Toast.makeText(this, "Select a player first", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        if (!drawingView.removeLastOption(player.id)) {
+            Toast.makeText(this, "${player.displayLabel} has no route option", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        Toast.makeText(this, "Removed ${player.displayLabel} route option", Toast.LENGTH_SHORT).show()
     }
 
     private fun confirmResetFormation() {
@@ -357,7 +385,8 @@ class CreatePlayActivity : AppCompatActivity(), CoachDrawingView.Listener {
             playType = playType,
             players = players,
             movements = drawingView.getMovements(),
-            imageResourceName = originalImageResourceName
+            imageResourceName = originalImageResourceName,
+            options = drawingView.getRouteOptions()
         )
 
         saveToDatabase(name, play)
@@ -381,7 +410,7 @@ class CreatePlayActivity : AppCompatActivity(), CoachDrawingView.Listener {
                 else PlayFormation.PLAY_TYPE_PASS
             )
 
-            drawingView.setFormation(loaded.players, loaded.movements)
+            drawingView.setFormation(loaded.players, loaded.movements, loaded.options)
             findViewById<TextView>(R.id.tvScreenTitle).text = "EDIT PLAY"
 
             if (loaded.droppedRouteKeys.isNotEmpty()) {
@@ -402,9 +431,7 @@ class CreatePlayActivity : AppCompatActivity(), CoachDrawingView.Listener {
                 val db = AppDatabase.getDatabase(this)
                 val dao = db.playDao()
 
-                if (isEditMode && originalPlayName != null && originalPlayName != name) {
-                    dao.permanentlyDeleteByName(originalPlayName!!)
-                }
+                val renamedFrom = originalPlayName?.takeIf { isEditMode && it != name }
 
                 val entity = PlayEntity(
                     name = name,
@@ -414,7 +441,20 @@ class CreatePlayActivity : AppCompatActivity(), CoachDrawingView.Listener {
                     updatedAt = System.currentTimeMillis()
                 )
 
-                dao.insertPlay(entity)
+                // One transaction, so a rename can never leave Hurry-Up Packages pointing at a
+                // play that no longer exists.
+                db.runInTransaction {
+                    if (renamedFrom != null) {
+                        dao.permanentlyDeleteByName(renamedFrom)
+                    }
+
+                    dao.insertPlay(entity)
+
+                    // A play renamed while editing keeps its place in any Hurry-Up Packages.
+                    if (renamedFrom != null) {
+                        HurryUpRepository.onPlayRenamed(this, renamedFrom, name)
+                    }
+                }
 
                 runOnUiThread {
                     SessionLogManager.addEntry(

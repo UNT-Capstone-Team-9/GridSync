@@ -312,8 +312,16 @@
             style="@style/Widget.Material3.Button.OutlinedButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="16dp"
+            android:layout_marginEnd="8dp"
             android:text="DRAW ROUTE" />
+
+        <Button
+            android:id="@+id/btnAddRouteOption"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="16dp"
+            android:text="ADD ROUTE OPTION" />
 
         <TextView
             android:id="@+id/tvModeHint"
@@ -330,6 +338,16 @@
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
             android:text="CLEAR SELECTED ROUTE"
+            android:textColor="#FFFFFF"
+            app:strokeColor="#415A77" />
+
+        <Button
+            android:id="@+id/btnRemoveRouteOption"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:text="REMOVE ROUTE OPTION"
             android:textColor="#FFFFFF"
             app:strokeColor="#415A77" />
 

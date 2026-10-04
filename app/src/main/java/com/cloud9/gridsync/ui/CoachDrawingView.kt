@@ -3,6 +3,7 @@ package com.cloud9.gridsync.ui
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.ComposePathEffect
 import android.graphics.CornerPathEffect
 import android.graphics.DashPathEffect
 import android.graphics.Paint
@@ -14,6 +15,7 @@ import android.view.View
 import com.cloud9.gridsync.network.PlayFormation
 import com.cloud9.gridsync.network.PlayerPosition
 import com.cloud9.gridsync.network.PointData
+import com.cloud9.gridsync.network.RouteBranch
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.hypot
@@ -22,13 +24,15 @@ import kotlin.math.sin
 
 class CoachDrawingView(context: Context, attrs: AttributeSet) : View(context, attrs) {
 
-    enum class Mode { MOVE, ROUTE }
+    // OPTION adds a dashed option branch to the selected player's existing route.
+    enum class Mode { MOVE, ROUTE, OPTION }
 
     interface Listener {
         fun onPlayerSelected(player: PlayerPosition?)
         fun onSwapTargetChosen(activePlayer: PlayerPosition)
         fun onFormationChanged()
         fun onSelectionNeeded()
+        fun onRouteOptionHint(message: String)
     }
 
     var listener: Listener? = null
@@ -36,6 +40,7 @@ class CoachDrawingView(context: Context, attrs: AttributeSet) : View(context, at
     var mode = Mode.MOVE
         set(value) {
             field = value
+            pendingBranchPoint = null
             invalidate()
         }
 
@@ -52,6 +57,10 @@ class CoachDrawingView(context: Context, attrs: AttributeSet) : View(context, at
     private val pointsMap = mutableMapOf<String, MutableList<PointData>>()
     private var selectedId: String? = null
 
+    // Dashed option branches per player id. Each branch starts at a point on that player's main
+    // route and is moved and cleared together with it.
+    private val optionsMap = mutableMapOf<String, MutableList<MutableList<PointData>>>()
+
     private var dragId: String? = null
     private var lastTouchX = 0f
     private var lastTouchY = 0f
@@ -59,6 +68,14 @@ class CoachDrawingView(context: Context, attrs: AttributeSet) : View(context, at
     private var routeId: String? = null
     private var routeBackup: List<PointData>? = null
     private var routeTravel = 0f
+    private var routeOptionsBackup: List<MutableList<PointData>>? = null
+
+    // The option branch being drawn. It is always the last branch in optionsMap[optionId].
+    private var optionId: String? = null
+    private var optionTravel = 0f
+
+    // A branch point picked with a short tap. The next drag starts the option from here.
+    private var pendingBranchPoint: PointData? = null
 
     private var swapHoverId: String? = null
 
@@ -85,6 +102,15 @@ class CoachDrawingView(context: Context, attrs: AttributeSet) : View(context, at
         strokeJoin = Paint.Join.ROUND
         strokeCap = Paint.Cap.ROUND
         pathEffect = CornerPathEffect(dp(6f))
+        isAntiAlias = true
+    }
+
+    // Option branches keep the player's route colour and width and only add the dash.
+    private val selectedOptionPaint = dashedCopy(selectedRoutePaint)
+    private val otherOptionPaint = dashedCopy(otherRoutePaint)
+
+    private val branchPointPaint = Paint().apply {
+        style = Paint.Style.FILL
         isAntiAlias = true
     }
 
@@ -154,7 +180,11 @@ class CoachDrawingView(context: Context, attrs: AttributeSet) : View(context, at
         isFakeBoldText = true
     }
 
-    fun setFormation(newPlayers: List<PlayerPosition>, movements: Map<String, List<PointData>>) {
+    fun setFormation(
+        newPlayers: List<PlayerPosition>,
+        movements: Map<String, List<PointData>>,
+        options: Map<String, List<RouteBranch>> = emptyMap()
+    ) {
         players.clear()
         players.addAll(newPlayers)
 
@@ -165,6 +195,15 @@ class CoachDrawingView(context: Context, attrs: AttributeSet) : View(context, at
                     PointData(it.x.coerceIn(0f, 1f), it.y.coerceIn(0f, 1f))
                 }.toMutableList()
             }
+        }
+
+        optionsMap.clear()
+        options.forEach { (id, branches) ->
+            if (!pointsMap.containsKey(id)) return@forEach
+            val kept = branches.filter { it.points.size >= 2 }.map { branch ->
+                branch.points.map { PointData(it.x.coerceIn(0f, 1f), it.y.coerceIn(0f, 1f)) }.toMutableList()
+            }
+            if (kept.isNotEmpty()) optionsMap[id] = kept.toMutableList()
         }
 
         if (players.none { it.id == selectedId && it.isActive }) {
@@ -185,12 +224,20 @@ class CoachDrawingView(context: Context, attrs: AttributeSet) : View(context, at
             .mapValues { it.value.toList() }
     }
 
+    fun getRouteOptions(): Map<String, List<RouteBranch>> {
+        return optionsMap
+            .filterKeys { (pointsMap[it]?.size ?: 0) >= 2 }
+            .mapValues { (_, branches) -> branches.filter { it.size >= 2 }.map { RouteBranch(it.toList()) } }
+            .filterValues { it.isNotEmpty() }
+    }
+
     fun getSelectedPlayer(): PlayerPosition? = players.firstOrNull { it.id == selectedId }
 
     fun selectPlayer(id: String?) {
         val newId = id?.takeIf { wanted -> players.any { it.id == wanted && it.isActive } }
         if (newId == selectedId) return
         selectedId = newId
+        pendingBranchPoint = null
         listener?.onPlayerSelected(getSelectedPlayer())
         invalidate()
     }
@@ -204,10 +251,26 @@ class CoachDrawingView(context: Context, attrs: AttributeSet) : View(context, at
 
     fun hasRoute(id: String): Boolean = (pointsMap[id]?.size ?: 0) >= 2
 
+    fun hasOptions(id: String): Boolean = optionsMap[id].orEmpty().isNotEmpty()
+
+    // Removes the main route and every option branch that hangs off it.
     fun clearRoute(id: String) {
         pointsMap.remove(id)
+        optionsMap.remove(id)
+        pendingBranchPoint = null
         listener?.onFormationChanged()
         invalidate()
+    }
+
+    // Removes the most recently added option branch and keeps the main route.
+    fun removeLastOption(id: String): Boolean {
+        val branches = optionsMap[id] ?: return false
+        if (branches.isEmpty()) return false
+        branches.removeAt(branches.lastIndex)
+        if (branches.isEmpty()) optionsMap.remove(id)
+        listener?.onFormationChanged()
+        invalidate()
+        return true
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
@@ -242,6 +305,7 @@ class CoachDrawingView(context: Context, attrs: AttributeSet) : View(context, at
 
             MotionEvent.ACTION_CANCEL -> {
                 routeId?.let { id -> restoreRoute(id) }
+                optionId?.let { id -> discardOptionDraft(id) }
                 cancelTouchState()
                 invalidate()
                 return true
@@ -285,14 +349,100 @@ class CoachDrawingView(context: Context, attrs: AttributeSet) : View(context, at
                 routeBackup = pointsMap[startPlayer.id]?.toList()
                 routeTravel = 0f
 
+                // A redrawn main route no longer passes through the old branch points, so its
+                // options are removed. A short tap or cancel brings them back with the old route.
+                routeOptionsBackup = optionsMap.remove(startPlayer.id)
+
                 // Every route starts at its player's marker, even when the finger lands elsewhere.
                 val newRoute = mutableListOf(PointData(startX, startY))
                 if (hit == null) newRoute.add(PointData(nx, ny))
                 pointsMap[startPlayer.id] = newRoute
             }
+
+            Mode.OPTION -> handleOptionDown(hit, px, py, nx, ny)
         }
 
         invalidate()
+    }
+
+    private fun handleOptionDown(hit: PlayerPosition?, px: Float, py: Float, nx: Float, ny: Float) {
+        val selected = getSelectedPlayer()
+        val branchPoint = selected?.let { nearestPointOnRoute(it.id, px, py) }
+
+        when {
+            selected != null && branchPoint != null -> startOption(selected.id, branchPoint, null)
+
+            hit != null && hit.id != selected?.id -> {
+                selectPlayer(hit.id)
+                if (!hasRoute(hit.id)) {
+                    listener?.onRouteOptionHint("Draw ${hit.displayLabel}'s main route first")
+                }
+            }
+
+            selected == null -> listener?.onRouteOptionHint("Select a player with a route first")
+
+            !hasRoute(selected.id) ->
+                listener?.onRouteOptionHint("Draw ${selected.displayLabel}'s main route first")
+
+            // After a tap picked the branch point, the coach can drag from anywhere.
+            pendingBranchPoint != null -> startOption(selected.id, pendingBranchPoint!!, PointData(nx, ny))
+
+            else -> listener?.onRouteOptionHint("Select a point on the player's existing route.")
+        }
+    }
+
+    private fun startOption(id: String, branchPoint: PointData, firstPoint: PointData?) {
+        val draft = mutableListOf(branchPoint)
+        if (firstPoint != null) draft.add(firstPoint)
+        optionsMap.getOrPut(id) { mutableListOf() }.add(draft)
+        optionId = id
+        optionTravel = 0f
+        pendingBranchPoint = branchPoint
+    }
+
+    private fun discardOptionDraft(id: String) {
+        val branches = optionsMap[id] ?: return
+        if (branches.isNotEmpty()) branches.removeAt(branches.lastIndex)
+        if (branches.isEmpty()) optionsMap.remove(id)
+    }
+
+    // Closest point on the player's main route to the touch, or null when the touch is too far
+    // from the route. The point is projected onto the nearest segment so it sits exactly on the line.
+    private fun nearestPointOnRoute(id: String, px: Float, py: Float): PointData? {
+        val points = pointsMap[id] ?: return null
+        if (points.size < 2) return null
+
+        var bestDistance = Float.MAX_VALUE
+        var bestX = 0f
+        var bestY = 0f
+
+        for (i in 0 until points.lastIndex) {
+            val ax = toPixelX(points[i].x)
+            val ay = toPixelY(points[i].y)
+            val bx = toPixelX(points[i + 1].x)
+            val by = toPixelY(points[i + 1].y)
+
+            val dx = bx - ax
+            val dy = by - ay
+            val lengthSq = dx * dx + dy * dy
+            val t = if (lengthSq == 0f) 0f else (((px - ax) * dx + (py - ay) * dy) / lengthSq).coerceIn(0f, 1f)
+
+            val cx = ax + t * dx
+            val cy = ay + t * dy
+            val distance = hypot(px - cx, py - cy)
+            if (distance < bestDistance) {
+                bestDistance = distance
+                bestX = cx
+                bestY = cy
+            }
+        }
+
+        if (bestDistance > dp(28f)) return null
+
+        return PointData(
+            ((bestX - boardRect.left) / boardRect.width()).coerceIn(0f, 1f),
+            ((bestY - boardRect.top) / boardRect.height()).coerceIn(0f, 1f)
+        )
     }
 
     private fun handleMove(px: Float, py: Float, nx: Float, ny: Float) {
@@ -324,6 +474,22 @@ class CoachDrawingView(context: Context, attrs: AttributeSet) : View(context, at
             if (distance >= dp(4f)) {
                 points.add(PointData(nx, ny))
                 routeTravel += distance
+                invalidate()
+            }
+            return
+        }
+
+        optionId?.let { id ->
+            val points = optionsMap[id]?.lastOrNull() ?: return
+            val last = points.last()
+            val distance = hypot(
+                (nx - last.x) * boardRect.width(),
+                (ny - last.y) * boardRect.height()
+            )
+
+            if (distance >= dp(4f)) {
+                points.add(PointData(nx, ny))
+                optionTravel += distance
                 invalidate()
             }
         }
@@ -364,7 +530,31 @@ class CoachDrawingView(context: Context, attrs: AttributeSet) : View(context, at
 
             routeId = null
             routeBackup = null
+            routeOptionsBackup = null
             listener?.onFormationChanged()
+            invalidate()
+            return
+        }
+
+        optionId?.let { id ->
+            optionsMap[id]?.lastOrNull()?.let { points ->
+                val last = points.last()
+                optionTravel += hypot(
+                    (nx - last.x) * boardRect.width(),
+                    (ny - last.y) * boardRect.height()
+                )
+                points.add(PointData(nx, ny))
+            }
+
+            if (optionTravel < dp(12f)) {
+                // A short tap only picks the branch point, which stays highlighted for the next drag.
+                discardOptionDraft(id)
+            } else {
+                pendingBranchPoint = null
+                listener?.onFormationChanged()
+            }
+
+            optionId = null
             invalidate()
         }
     }
@@ -376,6 +566,12 @@ class CoachDrawingView(context: Context, attrs: AttributeSet) : View(context, at
         } else {
             pointsMap.remove(id)
         }
+
+        val optionsBackup = routeOptionsBackup
+        if (optionsBackup != null && pointsMap.containsKey(id)) {
+            optionsMap[id] = optionsBackup.toMutableList()
+        }
+        routeOptionsBackup = null
     }
 
     // Moves a player inside the field and shifts its route by the same amount so the route stays attached.
@@ -397,13 +593,16 @@ class CoachDrawingView(context: Context, attrs: AttributeSet) : View(context, at
 
         val appliedDx = newX - oldX
         val appliedDy = newY - oldY
-        pointsMap[id]?.let { points ->
-            for (i in points.indices) {
-                points[i] = PointData(
-                    (points[i].x + appliedDx).coerceIn(0f, 1f),
-                    (points[i].y + appliedDy).coerceIn(0f, 1f)
-                )
-            }
+        pointsMap[id]?.let { points -> shiftPoints(points, appliedDx, appliedDy) }
+        optionsMap[id]?.forEach { branch -> shiftPoints(branch, appliedDx, appliedDy) }
+    }
+
+    private fun shiftPoints(points: MutableList<PointData>, dx: Float, dy: Float) {
+        for (i in points.indices) {
+            points[i] = PointData(
+                (points[i].x + dx).coerceIn(0f, 1f),
+                (points[i].y + dy).coerceIn(0f, 1f)
+            )
         }
     }
 
@@ -422,6 +621,8 @@ class CoachDrawingView(context: Context, attrs: AttributeSet) : View(context, at
         dragId = null
         routeId = null
         routeBackup = null
+        routeOptionsBackup = null
+        optionId = null
         swapHoverId = null
     }
 
@@ -508,6 +709,49 @@ class CoachDrawingView(context: Context, attrs: AttributeSet) : View(context, at
             val paint = if (id == selectedId) selectedRoutePaint else otherRoutePaint
             canvas.drawPath(path, paint)
             drawRouteArrow(canvas, points, paint)
+
+            drawOptions(canvas, id, paint)
+        }
+
+        pendingBranchPoint?.let { point ->
+            val cx = toPixelX(point.x)
+            val cy = toPixelY(point.y)
+            branchPointPaint.color = gold
+            canvas.drawCircle(cx, cy, dp(7f), branchPointPaint)
+            canvas.drawCircle(cx, cy, dp(7f), markerOutlinePaint)
+        }
+    }
+
+    // Dashed branches in the player's route colour, with a small dot at the branch point. The
+    // arrowheads use the solid route paint so they do not break up into dashes.
+    private fun drawOptions(canvas: Canvas, id: String, routePaint: Paint) {
+        val branches = optionsMap[id] ?: return
+        val optionPaint = if (routePaint === selectedRoutePaint) selectedOptionPaint else otherOptionPaint
+        branchPointPaint.color = routePaint.color
+
+        branches.forEach { points ->
+            if (points.size < 2) return@forEach
+
+            val path = Path()
+            points.forEachIndexed { index, point ->
+                val x = toPixelX(point.x)
+                val y = toPixelY(point.y)
+                if (index == 0) path.moveTo(x, y) else path.lineTo(x, y)
+            }
+
+            canvas.drawPath(path, optionPaint)
+            drawRouteArrow(canvas, points, routePaint)
+            canvas.drawCircle(toPixelX(points[0].x), toPixelY(points[0].y), dp(4.5f), branchPointPaint)
+        }
+    }
+
+    private fun dashedCopy(source: Paint): Paint {
+        return Paint(source).apply {
+            strokeCap = Paint.Cap.BUTT
+            pathEffect = ComposePathEffect(
+                DashPathEffect(floatArrayOf(dp(12f), dp(8f)), 0f),
+                CornerPathEffect(dp(6f))
+            )
         }
     }
 
