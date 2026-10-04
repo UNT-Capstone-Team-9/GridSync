@@ -2,16 +2,20 @@ package com.cloud9.gridsync
 
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.Color
+import android.content.res.ColorStateList
 import android.graphics.Typeface
 import android.os.Build
 import android.os.Bundle
+import android.text.TextUtils
+import android.view.Gravity
+import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import com.cloud9.gridsync.network.ConnectedWatch
 import com.cloud9.gridsync.network.RoleRepository
 import com.cloud9.gridsync.network.RoleStatusInfo
@@ -29,6 +33,7 @@ class DashboardActivity : AppCompatActivity(),
     private lateinit var playsCard: LinearLayout
 
     private lateinit var networkStatusText: TextView
+    private lateinit var networkStatusDot: View
     private lateinit var watchCountText: TextView
     private lateinit var playerStatusListContainer: LinearLayout
     private lateinit var sessionLogListContainer: LinearLayout
@@ -66,6 +71,7 @@ class DashboardActivity : AppCompatActivity(),
         playsCard = findViewById(R.id.playsCard)
 
         networkStatusText = findViewById(R.id.networkStatusText)
+        networkStatusDot = findViewById(R.id.networkStatusDot)
         watchCountText = findViewById(R.id.watchCountText)
         playerStatusListContainer = findViewById(R.id.playerStatusListContainer)
         sessionLogListContainer = findViewById(R.id.sessionLogListContainer)
@@ -134,18 +140,23 @@ class DashboardActivity : AppCompatActivity(),
             it.status != "Unassigned"
         }
 
-        networkStatusText.text = if (activeCount > 0) "Live" else "Listening"
+        val isLive = activeCount > 0
+        networkStatusText.text = if (isLive) "Live" else "Listening"
+        networkStatusText.setTextColor(color(if (isLive) R.color.gridsync_green_bright else R.color.gridsync_text_primary))
+        networkStatusDot.backgroundTintList = ColorStateList.valueOf(
+            color(if (isLive) R.color.gridsync_green_bright else R.color.gridsync_amber)
+        )
         watchCountText.text = "$activeCount active / $assignedCount assigned"
 
         playerStatusListContainer.removeAllViews()
-        statuses.forEach { info ->
+        statuses.forEachIndexed { index, info ->
+            if (index > 0) playerStatusListContainer.addView(buildDivider())
             playerStatusListContainer.addView(buildStatusRow(info))
         }
     }
 
-    private fun buildStatusRow(info: RoleStatusInfo): TextView {
-        val textView = TextView(this)
-
+    // One Player Status row: role, status and a coloured dot.
+    private fun buildStatusRow(info: RoleStatusInfo): View {
         val statusText = when (info.status) {
             "Offline" -> if (info.assignedWatchId.isNullOrBlank()) "Offline" else "Offline  ID ${info.assignedWatchId}"
             "Connecting" -> if (info.assignedWatchId.isNullOrBlank()) "Connecting" else "Connecting  ID ${info.assignedWatchId}"
@@ -153,23 +164,50 @@ class DashboardActivity : AppCompatActivity(),
             else -> "Unassigned"
         }
 
-        textView.text = "${info.role}    $statusText"
-        textView.textSize = 16f
-        textView.typeface = Typeface.MONOSPACE
-        textView.setPadding(0, dp(9), 0, dp(9))
-        textView.setTextColor(
+        val statusColor = color(
             when (info.status) {
-                "Online" -> Color.parseColor("#0F9D58")
-                "Connecting" -> Color.parseColor("#F59E0B")
-                "Offline" -> Color.parseColor("#7B8794")
-                else -> Color.parseColor("#1F2937")
+                "Online" -> R.color.gridsync_green_bright
+                "Connecting" -> R.color.gridsync_amber
+                "Offline" -> R.color.gridsync_text_secondary
+                else -> R.color.gridsync_text_muted
             }
         )
-        textView.layoutParams = LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT
-        )
-        return textView
+
+        val row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(0, dp(11), 0, dp(11))
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+        }
+
+        row.addView(TextView(this).apply {
+            text = info.role
+            textSize = 16f
+            setTextColor(color(R.color.gridsync_text_primary))
+            layoutParams = LinearLayout.LayoutParams(dp(72), ViewGroup.LayoutParams.WRAP_CONTENT)
+        })
+
+        row.addView(TextView(this).apply {
+            text = statusText
+            textSize = 15f
+            maxLines = 1
+            ellipsize = TextUtils.TruncateAt.END
+            setTextColor(statusColor)
+            layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+        })
+
+        row.addView(View(this).apply {
+            setBackgroundResource(R.drawable.dashboard_status_dot)
+            backgroundTintList = ColorStateList.valueOf(
+                if (info.status == "Unassigned") color(R.color.gridsync_border) else statusColor
+            )
+            layoutParams = LinearLayout.LayoutParams(dp(10), dp(10)).apply { marginStart = dp(8) }
+        })
+
+        return row
     }
 
     private fun renderSessionLog(entries: List<String>) {
@@ -179,20 +217,61 @@ class DashboardActivity : AppCompatActivity(),
             val empty = TextView(this)
             empty.text = "No activity yet"
             empty.textSize = 14f
-            empty.setTextColor(Color.parseColor("#52606D"))
+            empty.setTextColor(color(R.color.gridsync_text_muted))
             sessionLogListContainer.addView(empty)
             return
         }
 
-        entries.forEach { entry ->
-            val row = TextView(this)
-            row.text = entry
-            row.textSize = 14f
-            row.setTextColor(Color.parseColor("#52606D"))
-            row.setPadding(0, dp(4), 0, dp(4))
-            sessionLogListContainer.addView(row)
+        entries.forEachIndexed { index, entry ->
+            if (index > 0) sessionLogListContainer.addView(buildDivider())
+            sessionLogListContainer.addView(buildLogRow(entry))
         }
     }
+
+    private fun buildDivider(): View {
+        return View(this).apply {
+            setBackgroundColor(color(R.color.gridsync_divider))
+            layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(1))
+        }
+    }
+
+    // SessionLogManager entries are "h:mm:ss a  message", so the time gets its own column.
+    private fun buildLogRow(entry: String): View {
+        val split = entry.indexOf("  ")
+        val time = if (split > 0) entry.substring(0, split) else ""
+        val message = if (split > 0) entry.substring(split).trim() else entry
+
+        val row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(0, dp(8), 0, dp(8))
+        }
+
+        // Green bar marking each entry.
+        row.addView(View(this).apply {
+            setBackgroundColor(color(R.color.gridsync_green_bright))
+            layoutParams = LinearLayout.LayoutParams(dp(3), dp(22)).apply { marginEnd = dp(18) }
+        })
+
+        if (time.isNotEmpty()) {
+            row.addView(TextView(this).apply {
+                text = time
+                textSize = 15f
+                setTextColor(color(R.color.gridsync_text_secondary))
+                layoutParams = LinearLayout.LayoutParams(dp(118), ViewGroup.LayoutParams.WRAP_CONTENT)
+            })
+        }
+
+        row.addView(TextView(this).apply {
+            text = message
+            textSize = 15f
+            setTextColor(color(R.color.gridsync_text_primary))
+        })
+
+        return row
+    }
+
+    private fun color(resId: Int): Int = ContextCompat.getColor(this, resId)
 
     private fun dp(value: Int): Int {
         return (value * resources.displayMetrics.density).toInt()

@@ -3,6 +3,11 @@
     <style name="Base.Theme.GridSync" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your light theme here. -->
         <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <!-- Dark system bars with light icons to match the GridSync dark theme. -->
+        <item name="android:statusBarColor">@color/gridsync_background</item>
+        <item name="android:navigationBarColor">@color/gridsync_background</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="27">false</item>
     </style>
 
     <style name="Theme.GridSync" parent="Base.Theme.GridSync" />

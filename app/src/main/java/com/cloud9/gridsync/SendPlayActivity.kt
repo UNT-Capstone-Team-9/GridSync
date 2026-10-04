@@ -1,6 +1,7 @@
 package com.cloud9.gridsync
 
-import android.graphics.Color
+import android.content.res.ColorStateList
+import android.view.Gravity
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
@@ -11,6 +12,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import com.cloud9.gridsync.network.ConnectedWatch
 import com.cloud9.gridsync.network.RoleRepository
 import com.cloud9.gridsync.network.RoleStatusInfo
@@ -128,10 +130,18 @@ class SendPlayActivity : AppCompatActivity(), TabletServerManager.WatchListListe
         roleStatusContainer.removeAllViews()
         roleRowMap.clear()
 
-        roles.forEach { role ->
+        roles.forEachIndexed { index, role ->
+            if (index > 0) {
+                roleStatusContainer.addView(View(this).apply {
+                    setBackgroundColor(color(R.color.gridsync_divider))
+                    layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(1))
+                })
+            }
+
             val row = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL
-                setPadding(0, dp(10), 0, dp(10))
+                gravity = Gravity.CENTER_VERTICAL
+                setPadding(0, dp(4), 0, dp(4))
                 layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
@@ -140,20 +150,25 @@ class SendPlayActivity : AppCompatActivity(), TabletServerManager.WatchListListe
 
             val roleText = TextView(this).apply {
                 text = role
-                textSize = 15f
-                setTextColor(Color.parseColor("#14213D"))
-                layoutParams = LinearLayout.LayoutParams(dp(70), LinearLayout.LayoutParams.WRAP_CONTENT)
+                textSize = 16f
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+                setTextColor(color(R.color.gridsync_text_primary))
+                layoutParams = LinearLayout.LayoutParams(dp(72), LinearLayout.LayoutParams.WRAP_CONTENT)
             }
 
             val statusText = TextView(this).apply {
                 text = "Unassigned"
                 textSize = 15f
-                setTextColor(Color.parseColor("#1F2937"))
+                setTextColor(color(R.color.gridsync_text_muted))
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             }
 
             val checkBox = CheckBox(this).apply {
                 isChecked = false
+                buttonTintList = ColorStateList(
+                    arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
+                    intArrayOf(color(R.color.gridsync_green_bright), color(R.color.gridsync_text_muted))
+                )
             }
 
             row.addView(roleText)
@@ -180,14 +195,18 @@ class SendPlayActivity : AppCompatActivity(), TabletServerManager.WatchListListe
         textView.text = status
 
         textView.setTextColor(
-            when (status) {
-                "Online" -> Color.parseColor("#0F9D58")
-                "Connecting" -> Color.parseColor("#F59E0B")
-                "Offline" -> Color.parseColor("#7B8794")
-                else -> Color.parseColor("#1F2937")
-            }
+            color(
+                when (status) {
+                    "Online" -> R.color.gridsync_green_bright
+                    "Connecting" -> R.color.gridsync_amber
+                    "Offline" -> R.color.gridsync_text_secondary
+                    else -> R.color.gridsync_text_muted
+                }
+            )
         )
     }
+
+    private fun color(resId: Int): Int = ContextCompat.getColor(this, resId)
 
     private fun dp(value: Int): Int {
         return (value * resources.displayMetrics.density).toInt()

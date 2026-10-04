@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Faint watch with signal arcs behind the Assign Watches card. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="200dp" android:height="140dp" android:viewportWidth="200" android:viewportHeight="140">
+    <path android:pathData="M128,34h40a12,12 0,0 1,12 12v48a12,12 0,0 1,-12 12h-40a12,12 0,0 1,-12 -12v-48a12,12 0,0 1,12 -12z" android:strokeColor="#F5F7FA" android:strokeAlpha="0.14" android:strokeWidth="4" />
+    <path android:pathData="M132,34l4,-26h24l4,26M132,106l4,26h24l4,-26" android:strokeColor="#F5F7FA" android:strokeAlpha="0.14" android:strokeWidth="4" android:strokeLineJoin="round" />
+    <path android:pathData="M100,58a16,16 0,0 0,0 24M88,48a30,30 0,0 0,0 44M76,38a44,44 0,0 0,0 64" android:strokeColor="#46D369" android:strokeAlpha="0.3" android:strokeWidth="4" android:strokeLineCap="round" />
+</vector>

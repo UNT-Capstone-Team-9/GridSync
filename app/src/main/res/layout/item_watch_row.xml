@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One connected watch in Assign Watches. ArrayAdapter fills android:id/text1. -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@android:id/text1"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/gridsync_list_row"
+    android:drawablePadding="16dp"
+    android:gravity="center_vertical"
+    android:minHeight="64dp"
+    android:paddingHorizontal="20dp"
+    android:paddingVertical="16dp"
+    android:textColor="@color/gridsync_text_primary"
+    android:textSize="18sp"
+    android:textStyle="bold"
+    android:drawableStart="@drawable/ic_gs_watch" />

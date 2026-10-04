@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Full-width screen header: logo colour on the left fading into a grass field with the
+     GridSync shield on the right,
+     a green rule along the top and a hairline border underneath. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape>
+            <gradient
+                android:angle="0"
+                android:centerColor="@color/gridsync_header_start"
+                android:centerX="0.45"
+                android:endColor="@color/gridsync_header_end"
+                android:startColor="@color/gridsync_header_start" />
+        </shape>
+    </item>
+    <!-- Grass patch with the GridSync shield, generated from the official logo. -->
+    <item
+        android:width="760dp"
+        android:gravity="end|fill_vertical">
+        <bitmap
+            android:filter="true"
+            android:gravity="fill"
+            android:src="@drawable/gridsync_header_field" />
+    </item>
+    <item
+        android:height="2dp"
+        android:gravity="top|fill_horizontal">
+        <shape>
+            <gradient
+                android:angle="0"
+                android:endColor="#3346D369"
+                android:startColor="@color/gridsync_green_bright" />
+        </shape>
+    </item>
+    <item
+        android:height="1dp"
+        android:gravity="bottom|fill_horizontal">
+        <shape>
+            <solid android:color="@color/gridsync_border" />
+        </shape>
+    </item>
+</layer-list>

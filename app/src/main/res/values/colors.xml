@@ -2,4 +2,22 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <!-- GridSync dark football-tech theme -->
+    <color name="gridsync_background">#071019</color>
+    <color name="gridsync_surface">#0D1824</color>
+    <color name="gridsync_surface_alt">#101E2B</color>
+    <color name="gridsync_border">#1B4255</color>
+    <color name="gridsync_divider">#16293A</color>
+    <color name="gridsync_green">#3FA34D</color>
+    <color name="gridsync_green_bright">#46D369</color>
+    <color name="gridsync_blue">#20B7E8</color>
+    <color name="gridsync_amber">#F5B841</color>
+    <color name="gridsync_text_primary">#F5F7FA</color>
+    <color name="gridsync_text_secondary">#A8B3C2</color>
+    <color name="gridsync_text_muted">#718096</color>
+    <color name="gridsync_ripple">#2646D369</color>
+    <color name="gridsync_card_border">#25553F</color>
+    <color name="gridsync_header_start">#0B1D29</color>
+    <color name="gridsync_header_end">#0F2E22</color>
 </resources>

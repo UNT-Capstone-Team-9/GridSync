@@ -1,109 +1,126 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Dark football-tech dashboard, matched to app/docs:ui-reference/gridsync-dashboard-reference.png.
+     DashboardActivity looks up the card, status and list ids below, so keep them when editing. -->
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/dashboardRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#EEF3F8"
-    android:padding="20dp">
+    android:background="@color/gridsync_background">
 
     <LinearLayout
         android:id="@+id/headerBar"
+        style="@style/GridSync.Header"
         android:layout_width="0dp"
-        android:layout_height="64dp"
-        android:background="#FFFFFF"
-        android:elevation="3dp"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingHorizontal="18dp"
+        android:layout_height="92dp"
+        android:paddingStart="28dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
+
+        <ImageView
+            android:id="@+id/headerLogo"
+            android:layout_width="64dp"
+            android:layout_height="74dp"
+            android:adjustViewBounds="true"
+            android:contentDescription="GridSync logo"
+            android:scaleType="fitCenter"
+            android:src="@drawable/gridsync_logo_shield" />
 
         <TextView
             android:id="@+id/headerTitle"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginStart="18dp"
             android:layout_weight="1"
-            android:text="GridSync"
-            android:textColor="#14213D"
-            android:textSize="24sp"
+            android:text="@string/gridsync_wordmark"
+            android:textColor="@color/gridsync_text_primary"
+            android:textSize="40sp"
             android:textStyle="bold" />
 
         <ImageView
             android:id="@+id/settingsIcon"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
-            android:background="@android:color/transparent"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="bottom"
+            android:layout_marginBottom="10dp"
+            android:background="@drawable/dashboard_icon_ripple"
             android:clickable="true"
             android:contentDescription="Settings"
             android:focusable="true"
-            android:padding="6dp"
-            android:src="@android:drawable/ic_menu_manage" />
+            android:padding="11dp"
+            android:src="@android:drawable/ic_menu_manage"
+            app:tint="@color/gridsync_text_primary" />
     </LinearLayout>
 
     <LinearLayout
         android:id="@+id/statusBar"
         android:layout_width="0dp"
-        android:layout_height="52dp"
+        android:layout_height="50dp"
+        android:layout_marginStart="20dp"
         android:layout_marginTop="14dp"
-        android:background="#FFFFFF"
-        android:elevation="2dp"
+        android:layout_marginEnd="20dp"
+        android:background="@drawable/dashboard_panel_background"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:paddingHorizontal="16dp"
+        android:paddingHorizontal="20dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/headerBar">
 
-        <ImageView
+        <View
+            android:id="@+id/networkStatusDot"
             android:layout_width="18dp"
             android:layout_height="18dp"
-            android:src="@android:drawable/stat_notify_sync_noanim" />
+            android:background="@drawable/gridsync_status_ring" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
+            android:layout_marginStart="12dp"
             android:text="Network Status"
-            android:textColor="#5B6576"
-            android:textSize="14sp" />
+            android:textColor="@color/gridsync_text_secondary"
+            android:textSize="15sp" />
 
         <TextView
             android:id="@+id/networkStatusText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="6dp"
+            android:layout_marginStart="14dp"
             android:text="Listening"
-            android:textColor="#14213D"
-            android:textSize="14sp"
+            android:textColor="@color/gridsync_text_primary"
+            android:textSize="15sp"
             android:textStyle="bold" />
 
-        <Space
-            android:layout_width="28dp"
-            android:layout_height="1dp" />
+        <View
+            android:layout_width="1dp"
+            android:layout_height="26dp"
+            android:layout_marginHorizontal="24dp"
+            android:background="@color/gridsync_border" />
 
         <ImageView
-            android:layout_width="18dp"
-            android:layout_height="18dp"
-            android:src="@android:drawable/ic_menu_share" />
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:importantForAccessibility="no"
+            android:src="@android:drawable/ic_menu_share"
+            app:tint="@color/gridsync_text_primary" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
+            android:layout_marginStart="12dp"
             android:text="Watches"
-            android:textColor="#5B6576"
-            android:textSize="14sp" />
+            android:textColor="@color/gridsync_text_secondary"
+            android:textSize="15sp" />
 
         <TextView
             android:id="@+id/watchCountText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="6dp"
+            android:layout_marginStart="14dp"
             android:text="0 active / 0 assigned"
-            android:textColor="#14213D"
-            android:textSize="14sp"
+            android:textColor="@color/gridsync_text_primary"
+            android:textSize="15sp"
             android:textStyle="bold" />
     </LinearLayout>
 
@@ -111,236 +128,231 @@
         android:id="@+id/createPlayCard"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:layout_marginStart="20dp"
         android:layout_marginTop="16dp"
-        android:layout_marginEnd="10dp"
-        android:background="@drawable/card_background"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="8dp"
+        app:layout_constraintBottom_toTopOf="@id/assignWatchesCard"
+        app:layout_constraintEnd_toStartOf="@id/playsCard"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/statusBar"
+        android:background="@drawable/gridsync_card_play"
         android:clickable="true"
         android:elevation="4dp"
         android:focusable="true"
         android:gravity="center"
         android:orientation="vertical"
-        android:padding="20dp"
-        app:layout_constraintBottom_toTopOf="@id/assignWatchesCard"
-        app:layout_constraintEnd_toStartOf="@id/playsCard"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/statusBar">
+        android:paddingHorizontal="28dp"
+        android:paddingVertical="10dp">
 
         <ImageView
-            android:layout_width="50dp"
-            android:layout_height="50dp"
-            android:src="@android:drawable/ic_input_add" />
+            style="@style/GridSync.CardIcon"
+            android:src="@drawable/ic_gs_add_circle" />
 
         <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
-            android:text="Create New Play"
-            android:textColor="#1B263B"
-            android:textSize="20sp"
-            android:textStyle="bold" />
+            style="@style/GridSync.CardTitle"
+            android:text="Create New Play" />
 
         <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:gravity="center"
-            android:text="Design a formation, routes and assignments"
-            android:textColor="#5B6576"
-            android:textSize="14sp" />
+            style="@style/GridSync.CardBody"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:text="Design a formation, routes and assignments" />
     </LinearLayout>
 
     <LinearLayout
         android:id="@+id/playsCard"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:layout_marginStart="8dp"
         android:layout_marginTop="16dp"
-        android:layout_marginStart="10dp"
-        android:layout_marginEnd="10dp"
-        android:background="@drawable/card_background"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="8dp"
+        app:layout_constraintBottom_toTopOf="@id/sendPlayCard"
+        app:layout_constraintEnd_toStartOf="@id/playerStatusPanel"
+        app:layout_constraintStart_toEndOf="@id/createPlayCard"
+        app:layout_constraintTop_toBottomOf="@id/statusBar"
+        android:background="@drawable/gridsync_card_play"
         android:clickable="true"
         android:elevation="4dp"
         android:focusable="true"
         android:gravity="center"
         android:orientation="vertical"
-        android:padding="20dp"
-        app:layout_constraintBottom_toTopOf="@id/sendPlayCard"
-        app:layout_constraintEnd_toStartOf="@id/playerStatusPanel"
-        app:layout_constraintStart_toEndOf="@id/createPlayCard"
-        app:layout_constraintTop_toBottomOf="@id/statusBar">
+        android:paddingHorizontal="28dp"
+        android:paddingVertical="10dp">
 
         <ImageView
-            android:layout_width="50dp"
-            android:layout_height="50dp"
-            android:src="@android:drawable/ic_menu_agenda" />
+            style="@style/GridSync.CardIcon"
+            android:src="@drawable/ic_gs_playbook" />
 
         <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
-            android:text="Plays"
-            android:textColor="#1B263B"
-            android:textSize="20sp"
-            android:textStyle="bold" />
+            style="@style/GridSync.CardTitle"
+            android:text="Plays" />
 
         <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:gravity="center"
-            android:text="Play Library and Hurry-Up Packages"
-            android:textColor="#5B6576"
-            android:textSize="14sp" />
+            style="@style/GridSync.CardBody"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:text="Play Library and Hurry-Up Packages" />
     </LinearLayout>
 
     <LinearLayout
         android:id="@+id/assignWatchesCard"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginTop="12dp"
-        android:layout_marginEnd="10dp"
-        android:layout_marginBottom="14dp"
-        android:background="@drawable/card_background"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="16dp"
+        app:layout_constraintBottom_toTopOf="@id/sessionLogPanel"
+        app:layout_constraintEnd_toStartOf="@id/sendPlayCard"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/createPlayCard"
+        android:background="@drawable/gridsync_card_watch"
         android:clickable="true"
         android:elevation="4dp"
         android:focusable="true"
         android:gravity="center"
         android:orientation="vertical"
-        android:padding="20dp"
-        app:layout_constraintBottom_toTopOf="@id/sessionLogPanel"
-        app:layout_constraintEnd_toStartOf="@id/sendPlayCard"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/createPlayCard">
+        android:paddingHorizontal="28dp"
+        android:paddingVertical="10dp">
 
         <ImageView
-            android:layout_width="50dp"
-            android:layout_height="50dp"
-            android:src="@android:drawable/ic_menu_myplaces" />
+            style="@style/GridSync.CardIcon"
+            android:src="@drawable/ic_gs_assign" />
 
         <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
-            android:text="Assign Watches"
-            android:textColor="#1B263B"
-            android:textSize="20sp"
-            android:textStyle="bold" />
+            style="@style/GridSync.CardTitle"
+            android:text="Assign Watches" />
 
         <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:gravity="center"
-            android:text="Pair player watches with roles"
-            android:textColor="#5B6576"
-            android:textSize="14sp" />
+            style="@style/GridSync.CardBody"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:text="Pair player watches with roles" />
     </LinearLayout>
 
     <LinearLayout
         android:id="@+id/sendPlayCard"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginTop="12dp"
-        android:layout_marginStart="10dp"
-        android:layout_marginEnd="10dp"
-        android:layout_marginBottom="14dp"
-        android:background="@drawable/card_background"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
+        app:layout_constraintBottom_toTopOf="@id/sessionLogPanel"
+        app:layout_constraintEnd_toStartOf="@id/playerStatusPanel"
+        app:layout_constraintStart_toEndOf="@id/assignWatchesCard"
+        app:layout_constraintTop_toBottomOf="@id/playsCard"
+        android:background="@drawable/gridsync_card_message"
         android:clickable="true"
         android:elevation="4dp"
         android:focusable="true"
         android:gravity="center"
         android:orientation="vertical"
-        android:padding="20dp"
-        app:layout_constraintBottom_toTopOf="@id/sessionLogPanel"
-        app:layout_constraintEnd_toStartOf="@id/playerStatusPanel"
-        app:layout_constraintStart_toEndOf="@id/assignWatchesCard"
-        app:layout_constraintTop_toBottomOf="@id/playsCard">
+        android:paddingHorizontal="28dp"
+        android:paddingVertical="10dp">
 
         <ImageView
-            android:layout_width="50dp"
-            android:layout_height="50dp"
-            android:src="@android:drawable/ic_menu_send" />
+            style="@style/GridSync.CardIcon"
+            android:src="@drawable/ic_gs_send" />
 
         <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
-            android:text="Send Messages"
-            android:textColor="#1B263B"
-            android:textSize="20sp"
-            android:textStyle="bold" />
+            style="@style/GridSync.CardTitle"
+            android:text="Send Messages" />
 
         <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:gravity="center"
-            android:text="Send text instructions or messages to selected player roles"
-            android:textColor="#5B6576"
-            android:textSize="14sp" />
+            style="@style/GridSync.CardBody"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:text="Send text instructions or messages to selected player roles" />
     </LinearLayout>
 
     <LinearLayout
         android:id="@+id/playerStatusPanel"
-        android:layout_width="250dp"
+        style="@style/GridSync.Panel"
+        android:layout_width="300dp"
         android:layout_height="0dp"
         android:layout_marginTop="16dp"
-        android:background="@drawable/card_background"
-        android:elevation="4dp"
-        android:orientation="vertical"
+        android:layout_marginEnd="20dp"
+        android:layout_marginBottom="16dp"
         app:layout_constraintBottom_toTopOf="@id/sessionLogPanel"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@id/statusBar">
 
         <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:padding="16dp"
-            android:text="Player Status"
-            android:textColor="#1B263B"
-            android:textSize="20sp"
-            android:textStyle="bold" />
+            style="@style/GridSync.PanelTitle"
+            android:layout_marginStart="22dp"
+            android:layout_marginTop="18dp"
+            android:text="Player Status" />
+
+        <View
+            style="@style/GridSync.AccentRule"
+            android:layout_marginStart="22dp" />
+
+        <View
+            style="@style/GridSync.Divider"
+            android:layout_marginHorizontal="22dp" />
 
         <ScrollView
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:fillViewport="true">
+            android:fillViewport="true"
+            android:scrollbars="none">
 
             <LinearLayout
                 android:id="@+id/playerStatusListContainer"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:paddingHorizontal="16dp"
-                android:paddingBottom="12dp" />
+                android:paddingHorizontal="22dp"
+                android:paddingBottom="8dp" />
         </ScrollView>
     </LinearLayout>
 
     <LinearLayout
         android:id="@+id/sessionLogPanel"
+        style="@style/GridSync.Panel"
         android:layout_width="0dp"
-        android:layout_height="140dp"
-        android:background="@drawable/card_background"
-        android:elevation="4dp"
-        android:orientation="vertical"
-        android:padding="16dp"
+        android:layout_height="156dp"
+        android:layout_marginStart="20dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginBottom="20dp"
+        android:paddingHorizontal="26dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="8dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
 
-        <TextView
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Session Activity Log"
-            android:textColor="#1B263B"
-            android:textSize="18sp"
-            android:textStyle="bold" />
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:layout_width="26dp"
+                android:layout_height="26dp"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_gs_log" />
+
+            <TextView
+                style="@style/GridSync.PanelTitle"
+                android:layout_marginStart="14dp"
+                android:text="Session Activity Log"
+                android:textSize="20sp" />
+        </LinearLayout>
+
+        <View
+            style="@style/GridSync.Divider"
+            android:layout_marginTop="12dp" />
 
         <ScrollView
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:layout_marginTop="10dp"
             android:fillViewport="true">
 
             <LinearLayout

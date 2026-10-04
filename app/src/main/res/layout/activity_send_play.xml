@@ -1,156 +1,129 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<!-- Send Messages (coach text messages to selected roles) in the shared GridSync dark style.
+     SendPlayActivity looks up backButton, messageInput, sendButton and roleStatusContainer. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F7F9FC"
-    android:padding="20dp">
+    android:background="@color/gridsync_background"
+    android:orientation="vertical">
 
     <LinearLayout
         android:id="@+id/headerBar"
-        android:layout_width="0dp"
-        android:layout_height="56dp"
-        android:background="#FFFFFF"
-        android:elevation="2dp"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingHorizontal="12dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        style="@style/GridSync.Header">
 
         <ImageButton
             android:id="@+id/backButton"
-            android:layout_width="44dp"
-            android:layout_height="44dp"
-            android:background="@android:color/transparent"
-            android:contentDescription="Back"
-            android:padding="8dp"
-            android:src="@android:drawable/ic_media_previous" />
+            style="@style/GridSync.BackButton" />
+
+        <ImageView style="@style/GridSync.HeaderLogo" />
 
         <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:text="Send Message"
-            android:textColor="#14213D"
-            android:textSize="22sp"
-            android:textStyle="bold" />
-
-        <View
-            android:layout_width="44dp"
-            android:layout_height="44dp" />
+            style="@style/GridSync.ScreenTitle"
+            android:text="Send Messages" />
     </LinearLayout>
 
     <LinearLayout
         android:id="@+id/mainContent"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_marginTop="16dp"
+        android:layout_weight="1"
+        android:baselineAligned="false"
         android:orientation="horizontal"
-        app:layout_constraintTop_toBottomOf="@id/headerBar"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        android:padding="20dp">
 
         <LinearLayout
             android:id="@+id/leftPanel"
+            style="@style/GridSync.Panel"
             android:layout_width="0dp"
             android:layout_height="match_parent"
+            android:layout_marginEnd="16dp"
             android:layout_weight="1.6"
-            android:layout_marginEnd="12dp"
-            android:background="#FFFFFF"
-            android:elevation="2dp"
-            android:orientation="vertical"
-            android:padding="16dp">
+            android:padding="22dp">
 
             <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Coach Message"
-                android:textColor="#14213D"
-                android:textSize="20sp"
-                android:textStyle="bold" />
+                style="@style/GridSync.PanelTitle"
+                android:text="Coach Message" />
+
+            <View style="@style/GridSync.AccentRule" />
 
             <EditText
                 android:id="@+id/messageInput"
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
+                android:layout_marginTop="18dp"
                 android:layout_weight="1"
-                android:layout_marginTop="16dp"
-                android:background="#F2F4F7"
+                android:background="@drawable/gridsync_input_background"
                 android:gravity="top|start"
                 android:hint="Type your message to selected roles"
-                android:padding="16dp"
-                android:textColor="#111111"
-                android:textColorHint="#777777"
+                android:importantForAutofill="no"
+                android:inputType="textMultiLine|textCapSentences"
+                android:padding="18dp"
+                android:textColor="@color/gridsync_text_primary"
+                android:textColorHint="@color/gridsync_text_muted"
                 android:textSize="22sp" />
 
-            <Button
+            <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/sendButton"
+                style="@style/GridSync.PrimaryButton"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:background="@drawable/button_background_selected"
-                android:padding="16dp"
-                android:text="Send Message"
-                android:textAllCaps="false"
-                android:textColor="#FFFFFF"
-                android:textSize="18sp"
-                android:textStyle="bold" />
+                android:layout_marginTop="18dp"
+                android:text="Send Message" />
         </LinearLayout>
 
         <LinearLayout
             android:id="@+id/rightPanel"
+            style="@style/GridSync.Panel"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1.2"
-            android:background="#FFFFFF"
-            android:elevation="2dp"
-            android:orientation="vertical"
-            android:padding="16dp">
+            android:paddingHorizontal="22dp"
+            android:paddingTop="22dp"
+            android:paddingBottom="12dp">
 
             <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Role and Status"
-                android:textColor="#14213D"
-                android:textSize="20sp"
-                android:textStyle="bold" />
+                style="@style/GridSync.PanelTitle"
+                android:text="Role and Status" />
+
+            <View style="@style/GridSync.AccentRule" />
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="14dp"
+                android:layout_marginTop="16dp"
                 android:orientation="horizontal"
                 android:paddingBottom="10dp">
 
                 <TextView
-                    android:layout_width="70dp"
+                    android:layout_width="72dp"
                     android:layout_height="wrap_content"
-                    android:text="Role"
-                    android:textColor="#14213D"
-                    android:textSize="15sp"
+                    android:letterSpacing="0.08"
+                    android:text="ROLE"
+                    android:textColor="@color/gridsync_text_muted"
+                    android:textSize="13sp"
                     android:textStyle="bold" />
 
                 <TextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Status"
-                    android:textColor="#14213D"
-                    android:textSize="15sp"
+                    android:letterSpacing="0.08"
+                    android:text="STATUS"
+                    android:textColor="@color/gridsync_text_muted"
+                    android:textSize="13sp"
                     android:textStyle="bold" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Send"
-                    android:textColor="#14213D"
-                    android:textSize="15sp"
+                    android:letterSpacing="0.08"
+                    android:text="SEND"
+                    android:textColor="@color/gridsync_text_muted"
+                    android:textSize="13sp"
                     android:textStyle="bold" />
             </LinearLayout>
+
+            <View style="@style/GridSync.Divider" />
 
             <ScrollView
                 android:layout_width="match_parent"
@@ -168,4 +141,4 @@
 
     </LinearLayout>
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+</LinearLayout>

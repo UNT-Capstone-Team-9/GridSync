@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Smartwatch, used in the Assign Watches list. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">
+    <path android:pathData="M8,6h8a2.5,2.5 0,0 1,2.5 2.5v7a2.5,2.5 0,0 1,-2.5 2.5h-8a2.5,2.5 0,0 1,-2.5 -2.5v-7a2.5,2.5 0,0 1,2.5 -2.5z" android:strokeColor="#46D369" android:strokeWidth="1.6" />
+    <path android:pathData="M9,6l0.6,-3.5h4.8L15,6M9,18l0.6,3.5h4.8L15,18" android:strokeColor="#46D369" android:strokeWidth="1.6" android:strokeLineJoin="round" />
+</vector>

@@ -14,4 +14,6 @@
         <item>Right Tackle (RT)</item>
         <item>Fullback (FB)</item>
     </string-array>
+    <!-- "Grid" in white and "Sync" in GridSync green, as in the header design. -->
+    <string name="gridsync_wordmark">Grid<font color="#46D369">Sync</font></string>
 </resources>
