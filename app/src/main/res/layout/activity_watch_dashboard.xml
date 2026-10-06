@@ -138,7 +138,7 @@
             android:maxLines="3"
             android:text="Scanning for tablet..."
             android:textColor="#FFFFFF"
-            android:textSize="22sp" />
+            android:textSize="40sp" />
 
         <com.cloud9.gridsync.ui.WatchRouteView
             android:id="@+id/watchRouteView"

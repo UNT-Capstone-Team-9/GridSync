@@ -110,7 +110,7 @@ class WatchDashboardActivity : AppCompatActivity(),
         textMessageContainer.visibility = View.GONE
         playContainer.visibility = View.VISIBLE
 
-        playNameText.text = if (playName.isBlank()) "Incoming Play" else playName
+        playNameText.text = ""
         playText.text = playTextMessage
         watchRouteView.setPlay(movements, players, isFullPlay)
 
