@@ -52,7 +52,7 @@ class AssignWatchesActivity : AppCompatActivity() {
 
         adapter = ArrayAdapter(
             this,
-            android.R.layout.simple_list_item_1,
+            R.layout.item_connected_watch,
             mutableListOf()
         )
         watchListView.adapter = adapter

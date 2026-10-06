@@ -98,7 +98,10 @@
         android:layout_height="0dp"
         android:gravity="center_horizontal"
         android:orientation="vertical"
-        android:padding="10dp"
+        android:paddingStart="6dp"
+        android:paddingTop="2dp"
+        android:paddingEnd="6dp"
+        android:paddingBottom="4dp"
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -109,7 +112,7 @@
             android:id="@+id/playerRoleText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="4dp"
+            android:layout_marginBottom="2dp"
             android:gravity="center"
             android:text="Unassigned"
             android:textColor="#00FF88"
@@ -119,20 +122,14 @@
         <TextView
             android:id="@+id/playNameText"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="4dp"
-            android:gravity="center"
-            android:maxLines="2"
-            android:text="Waiting for play"
-            android:textColor="#FFFFFF"
-            android:textSize="26sp"
-            android:textStyle="bold" />
+            android:layout_height="0dp"
+            android:visibility="gone" />
 
         <TextView
             android:id="@+id/playText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="8dp"
+            android:layout_marginBottom="4dp"
             android:gravity="center"
             android:lineSpacingExtra="2dp"
             android:maxLines="3"
@@ -145,6 +142,7 @@
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1" />
+
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
