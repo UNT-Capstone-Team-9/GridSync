@@ -1,18 +1,18 @@
-# [Application Name] – User Manual
-**Version:** [Version Number]
-**Team Name:** [Your Team Name]
-**Date:** [MM/DD/YYYY]
+# GridSync – User Manual
+**Version:** 1.0
+**Team Name:** Cloud9
+**Date:** 10/08/2026
  
 ---
  
 ## 1. Introduction
-[2-3 sentences explaining what your application does, who it is for and why it's useful.]
+GridSync is a sports communication application designed to improve how coaches deliver both offensive and defensive plays during practices and simulated game situations. Instead of relying on verbal communication or printed play sheets, coaches will be able to select a play on a tablet and instantly send individualized assignments to players through Android wearable devices. The goal of the project is to build a working prototype that demonstrates structured one way communication over a controlled local network. 
  
 ---
  
 ## 2. System Requirements
-- **Hardware:** [List hardware requirements e.g., Minimum 4GB RAM, active internet connection]
-- **Software:** [List software requirements e.g Python, Node.js v18….]
+- **Hardware:** Android tablet, Android watches, and a local Wi-Fi router
+- **Software:** Android OS, and Kotlin or Java
 - **Other Dependencies:** [Any additional tools/libraries needed like DB, tools or API keys needed]
  
 ---
@@ -23,8 +23,10 @@ Step 2: Environment setup or command to run (Note: If your project is a hosted w
 ---
  
 ## 4. Getting Started
-1. [How to launch the application]
-2. [Basic first steps for using it e.g how to create an account, login]
+1. Launch the application on the coach's tablet
+2. Launch the application on the player's watch
+3. 
+4. [Basic first steps for using it e.g how to create an account, login]
  
 ---
  
@@ -56,10 +58,8 @@ e.g: App will not launch | Missing dependencies | Run `npm install` before launc
 
 
 ## 7. Contact Information
-- **Support Email:**[contact Email]
-- **Website:**[Optional]
-- ** Project Repository:**[GitHub/GitLab Link]
-- **Other Support Channels:** [Optional]
+- **Support Email:** HaleyKang@my.unt.edu
+- **Project Repository:** https://github.com/UNT-Capstone-Team-9/GridSync.git
 
 
 ## 8. FAQ (Optional – Extra Credit)
