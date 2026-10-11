@@ -12,21 +12,23 @@ GridSync is a sports communication application designed to improve how coaches d
  
 ## 2. System Requirements
 - **Hardware:** Android tablet, Android watches, and a local Wi-Fi router
-- **Software:** Android OS, and Kotlin or Java
-- **Other Dependencies:** [Any additional tools/libraries needed like DB, tools or API keys needed]
- 
+- **Software:** Android OS, Android Studio, and Kotlin or Java
 ---
  
 ## 3. Installation Guide
-Step 1: Download/Clone repository or access server
-Step 2: Environment setup or command to run (Note: If your project is a hosted web application, state "No installation required” and provide the live application link). 
+**Step 1:** Download/Clone the repository.
+
+**Step 2:** Use Android Studio to download the app.
+
 ---
+
  
 ## 4. Getting Started
-1. Launch the application on the coach's tablet
-2. Launch the application on the player's watch
-3. 
-4. [Basic first steps for using it e.g how to create an account, login]
+1. Make sure that both the tablet and the watches are on the same Wifi.
+2. Launch the application on the coach's tablet.
+3. Launch the application on the player's watch.
+4. Navigate to the "Assign Watches" Button on the tablet.
+5. Wait until the watch appears on the screen as connected.
  
 ---
  
