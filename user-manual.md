@@ -56,29 +56,67 @@ Designates one connected smartwatch as the Quarterback so that only that specifi
 
 ---
  
-## 6. Troubleshooting examples
-| [Problem1] | [Cause1] | [Solution 1]|
-|---------|----------------|----------|
-| [Example problem] | [Example cause] | [Example fix] |
- 
+## 6. Troubleshooting
+
+| Problem | Possible cause | Solution |
+| --- | --- | --- |
+| Watch does not appear on the tablet | Devices are on different networks or the watch app is closed | Connect both devices to the same Wi-Fi network and open GridSync on both devices. |
+| Watch shows Unassigned | No player role has been assigned | Open Assign Watches on the tablet. Tap the watch and select its player role. |
+| Player does not receive a play | Watch is disconnected or its role is incorrect | Check the connection and assigned role in Assign Watches. Then resend the play. |
+| Quarterback does not see the full formation | Watch is not assigned QB or a text message was sent | Assign the QB role to the watch and send a saved play from the Play Library. |
+| Play will not save | Play name is missing or the formation is invalid | Enter a play name and correct any issues shown in the warning message. |
+| Hurry-Up package cannot be created | Fewer than two saved plays are selected | Select at least two saved plays and enter a unique package name. |
+| Coach message will not send | Message is empty or no roles are selected | Enter a message and select at least one connected player role. |
+| Deleted play is missing | Play was moved to Trash | Open Trash and restore the play if it has not been permanently deleted. |
+
 ---
- 
-
-e.g: App will not launch | Missing dependencies | Run `npm install` before launching. | 
-| [Problem 2] |[Cause 2] | [Solution 2]
-
-| Login fails | Incorrect credentials | Verify email spelling or click "Reset Password". | 
-
-
 
 ## 7. Contact Information
-- **Support Email:** HaleyKang@my.unt.edu
-- **Project Repository:** https://github.com/UNT-Capstone-Team-9/GridSync.git
 
+| Team Member | Support Email |
+| --- | --- |
+| Haley Kang | HaleyKang@my.unt.edu |
+| Raj Shakya | RajShakya@my.unt.edu |
+| Kunsang Gurung | KunsangGurung@my.unt.edu |
+| Solomon Legesse | SolomonLegesse@my.unt.edu |
+| Esemfon Edet | esemfonedetedet@my.unt.edu |
 
-## 8. FAQ (Optional – Extra Credit)
-**Q:** [Question 1]
-**A:** [Answer 1]
+**Project Repository**
 
-**Q:** [Question 2] 
-**A:** [Answer 2]
+[GridSync on GitHub](https://github.com/UNT-Capstone-Team-9/GridSync)
+
+---
+
+## 8. FAQ
+
+### Q1. Do the tablet and watches need internet access?
+**Answer**  
+No. GridSync communicates over a local Wi-Fi network. The tablet and watches must be connected to the same network.
+
+### Q2. Does every player see the entire play?
+**Answer**  
+No. The QB watch displays the full formation. Other assigned watches display their individual player information.
+
+### Q3. How many plays are required for a Hurry-Up package?
+**Answer**  
+There is no minimum number of plays required. The coach can add plays from the Play Library as needed.
+
+### Q4. Does a Hurry-Up package send all its plays at once?
+**Answer**  
+No. Open the package and send the individual play you want players to receive.
+
+### Q5. Does deleting a package delete its saved plays?
+**Answer**  
+No. The plays remain in the Play Library.
+
+### Q6. Can I recover a deleted play?
+**Answer**  
+Yes if the play is still in Trash. Permanently deleted plays cannot be restored from Trash.
+
+### Q7. Do players need Android Studio?
+**Answer**  
+No. Players only need the installed GridSync app.
+
+### Q8. Does a send notification mean the player read the play?
+**Answer**  
+No. Check the watch to confirm that the play appeared. GridSync does not provide a player read confirmation.
