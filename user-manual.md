@@ -26,10 +26,17 @@ GridSync is a sports communication application designed to improve how coaches d
 ## 4. Getting Started
 1. Make sure that both the tablet and the watches are on the same Wifi.
 2. Launch the application on the coach's tablet.
+<img src="images/tablet-app.jpeg" alt="App Dashboard" width="250">
 3. Launch the application on the player's watch.
+<img src="images/watch-app.jpeg" alt="App Dashboard" width="250">
 4. Navigate to the "Assign Watches" Button on the tablet.
+<img src="images/home-dashboard-horizontal.jpeg" alt="App Dashboard" width="250">
 5. Wait until the watch appears on the screen as connected.
- 
+<img src="images/assign-watches-waiting-2.jpeg" alt="App Dashboard" width="250">
+<img src="images/assign-watches.jpeg" alt="App Dashboard" width="250">
+6. Assign the watch role
+<img src="images/assign-role.jpeg" alt="App Dashboard" width="250">
+
 ---
  
 ## 5. Features & Functions
@@ -39,9 +46,11 @@ This feature allows the coach to create, store, edit, and select offensive or de
 
 - Navigate to the Create Play screen from the main menu.
 - Enter the play name in the text field.
-- 
-
-<img src="images/create-new-play.jpeg" alt="App Dashboard" width="500">
+- The user can select "Move Players" and drag any of the player dots to set the formation.
+- The user can select "Draw Route" to click and drag the route they want the player to go.
+- On the side of the screen, the user can replace a player with a different position.
+<img src="images/create-new-play-3.jpeg" alt="App Dashboard" width="250">
+<img src="images/create-new-play-2.jpeg" alt="App Dashboard" width="250">
  
 ### Feature 2: Hurry-Up Play Package
 Groups two or more frequently used plays into a quick-access package, enabling the coach to select and transmit a prepared set of plays via a single control in under 2 seconds during no-huddle situations.
@@ -49,10 +58,11 @@ Groups two or more frequently used plays into a quick-access package, enabling t
 - Navigate to the Hurry-Up Package screen from the main menu.
 - Select two or more saved plays from your Play Library to bundle together.
 - When the Coach needs to instantly send a play, they only need to press a single button.
-<img src="images/hurry-up-packages.jpeg" alt="App Dashboard" width="500">
+<img src="images/hurry-up-packages.jpeg" alt="App Dashboard" width="250">
 
 ### Feature 3: Quarterback Full Play View
 Designates one connected smartwatch as the Quarterback so that only that specific watch receives and displays the complete play formation, while all other watches continue to display only their individual role-specific assignments.
+<img src="images/QB-fullplay.jpeg" alt="App Dashboard" width="250">
 
 ---
  
