@@ -34,14 +34,26 @@ GridSync is a sports communication application designed to improve how coaches d
  
 ## 5. Features & Functions
  
-### Feature 1: [Feature Name]
-[Description: what does this feature do?, 
-how to use it: step by step execution,
-(include at least 2 screenshots/examples]
+### Feature 1: Play Creation & Management
+This feature allows the coach to create, store, edit, and select offensive or defensive plays directly on the Android tablet, assigning role-specific responsibilities to each player position.
+
+- Navigate to the Create Play screen from the main menu.
+- Enter the play name in the text field.
+- 
+
+<img src="images/create-new-play.jpeg" alt="App Dashboard" width="500">
  
-### Feature 2: [Feature Name]
-[Description, how to use it, screenshot/example]
- 
+### Feature 2: Hurry-Up Play Package
+Groups two or more frequently used plays into a quick-access package, enabling the coach to select and transmit a prepared set of plays via a single control in under 2 seconds during no-huddle situations.
+
+- Navigate to the Hurry-Up Package screen from the main menu.
+- Select two or more saved plays from your Play Library to bundle together.
+- When the Coach needs to instantly send a play, they only need to press a single button.
+<img src="images/hurry-up-packages.jpeg" alt="App Dashboard" width="500">
+
+### Feature 3: Quarterback Full Play View
+Designates one connected smartwatch as the Quarterback so that only that specific watch receives and displays the complete play formation, while all other watches continue to display only their individual role-specific assignments.
+
 ---
  
 ## 6. Troubleshooting examples
