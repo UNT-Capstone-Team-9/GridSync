@@ -16,6 +16,7 @@ import com.cloud9.gridsync.network.PlayFormation
 import com.cloud9.gridsync.network.PlayerPosition
 import com.cloud9.gridsync.network.PointData
 import com.cloud9.gridsync.network.RouteBranch
+import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.hypot
@@ -526,6 +527,8 @@ class CoachDrawingView(context: Context, attrs: AttributeSet) : View(context, at
             // A short tap in route mode only selects the player and keeps any existing route.
             if (routeTravel < dp(12f)) {
                 restoreRoute(id)
+            } else {
+                pointsMap[id]?.let { pointsMap[id] = straighten(it) }
             }
 
             routeId = null
@@ -550,6 +553,9 @@ class CoachDrawingView(context: Context, attrs: AttributeSet) : View(context, at
                 // A short tap only picks the branch point, which stays highlighted for the next drag.
                 discardOptionDraft(id)
             } else {
+                optionsMap[id]?.let { branches ->
+                    branches[branches.lastIndex] = straighten(branches.last())
+                }
                 pendingBranchPoint = null
                 listener?.onFormationChanged()
             }
@@ -696,8 +702,11 @@ class CoachDrawingView(context: Context, attrs: AttributeSet) : View(context, at
         // Draw the selected route last so it sits on top of the others.
         val ordered = pointsMap.entries.sortedBy { it.key == selectedId }
 
-        ordered.forEach { (id, points) ->
-            if (points.size < 2) return@forEach
+        ordered.forEach { (id, rawPoints) ->
+            if (rawPoints.size < 2) return@forEach
+
+            // The route being drawn is shown straightened live, matching what is stored on lift.
+            val points = if (id == routeId) straighten(rawPoints) else rawPoints
 
             val path = Path()
             points.forEachIndexed { index, point ->
@@ -729,8 +738,11 @@ class CoachDrawingView(context: Context, attrs: AttributeSet) : View(context, at
         val optionPaint = if (routePaint === selectedRoutePaint) selectedOptionPaint else otherOptionPaint
         branchPointPaint.color = routePaint.color
 
-        branches.forEach { points ->
-            if (points.size < 2) return@forEach
+        branches.forEachIndexed { branchIndex, rawPoints ->
+            if (rawPoints.size < 2) return@forEachIndexed
+
+            val isDraft = id == optionId && branchIndex == branches.lastIndex
+            val points = if (isDraft) straighten(rawPoints) else rawPoints
 
             val path = Path()
             points.forEachIndexed { index, point ->
@@ -743,6 +755,75 @@ class CoachDrawingView(context: Context, attrs: AttributeSet) : View(context, at
             drawRouteArrow(canvas, points, routePaint)
             canvas.drawCircle(toPixelX(points[0].x), toPixelY(points[0].y), dp(4.5f), branchPointPaint)
         }
+    }
+
+    // Turns a freehand stroke into straight legs with clean breaks, like a Madden route. Wobble is
+    // removed with Ramer-Douglas-Peucker, then legs that are nearly vertical or horizontal are
+    // snapped exactly to that axis. Works in pixels so the field's aspect ratio does not skew angles.
+    // The first point never moves, so routes stay on the marker and options stay on their branch point.
+    private fun straighten(points: List<PointData>): MutableList<PointData> {
+        if (points.size < 3 || boardRect.isEmpty) return points.toMutableList()
+
+        val px = points.map { toPixelX(it.x) to toPixelY(it.y) }
+        val keep = BooleanArray(px.size)
+        keep[0] = true
+        keep[px.lastIndex] = true
+        simplifyRange(px, 0, px.lastIndex, dp(10f), keep)
+
+        val corners = px.filterIndexed { i, _ -> keep[i] }.toMutableList()
+
+        val snapTolerance = Math.toRadians(8.0)
+        for (i in 1 until corners.size) {
+            val (ax, ay) = corners[i - 1]
+            val (bx, by) = corners[i]
+            val angle = atan2(abs(by - ay), abs(bx - ax)).toDouble()
+            corners[i] = when {
+                angle > Math.PI / 2 - snapTolerance -> ax to by
+                angle < snapTolerance -> bx to ay
+                else -> bx to by
+            }
+        }
+
+        return corners.map { (x, y) ->
+            PointData(
+                ((x - boardRect.left) / boardRect.width()).coerceIn(0f, 1f),
+                ((y - boardRect.top) / boardRect.height()).coerceIn(0f, 1f)
+            )
+        }.toMutableList()
+    }
+
+    private fun simplifyRange(
+        px: List<Pair<Float, Float>>,
+        start: Int,
+        end: Int,
+        tolerance: Float,
+        keep: BooleanArray
+    ) {
+        if (end <= start + 1) return
+
+        val (ax, ay) = px[start]
+        val (bx, by) = px[end]
+        val length = hypot(bx - ax, by - ay)
+
+        var farthest = -1
+        var farthestDistance = tolerance
+        for (i in start + 1 until end) {
+            val (x, y) = px[i]
+            val distance = if (length == 0f) {
+                hypot(x - ax, y - ay)
+            } else {
+                abs((bx - ax) * (ay - y) - (ax - x) * (by - ay)) / length
+            }
+            if (distance > farthestDistance) {
+                farthestDistance = distance
+                farthest = i
+            }
+        }
+
+        if (farthest < 0) return
+        keep[farthest] = true
+        simplifyRange(px, start, farthest, tolerance, keep)
+        simplifyRange(px, farthest, end, tolerance, keep)
     }
 
     private fun dashedCopy(source: Paint): Paint {
