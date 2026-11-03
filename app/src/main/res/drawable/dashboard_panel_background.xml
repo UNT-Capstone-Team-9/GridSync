@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Non-clickable dark panel: header, status bar, Player Status and Session Activity Log. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <solid android:color="@color/gridsync_surface" />
+    <corners android:radius="16dp" />
+    <stroke
+        android:width="1dp"
+        android:color="@color/gridsync_border" />
+</shape>

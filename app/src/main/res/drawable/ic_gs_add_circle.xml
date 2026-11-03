@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Create New Play: green ring with a plus. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="48dp" android:height="48dp" android:viewportWidth="48" android:viewportHeight="48">
+    <path android:pathData="M24,3.5a20.5,20.5 0,1 1,0 41a20.5,20.5 0,1 1,0 -41z" android:fillColor="#1A46D369" android:strokeColor="#46D369" android:strokeWidth="2.6" />
+    <path android:pathData="M24,14.5V33.5M14.5,24H33.5" android:strokeColor="#46D369" android:strokeWidth="3.4" android:strokeLineCap="round" />
+</vector>

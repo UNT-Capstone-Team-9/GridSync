@@ -85,7 +85,7 @@
             android:layout_height="44dp"
             android:layout_weight="1.2"
             android:background="@drawable/create_play_input"
-            android:hint="e.g. Trips Right Flood"
+            android:hint="e.g. Trips Right   Flood"
             android:imeOptions="actionNext|flagNoExtractUi"
             android:inputType="textCapCharacters"
             android:maxLines="1"
@@ -224,67 +224,88 @@
         </LinearLayout>
     </LinearLayout>
 
+
     <!-- Selected player assignment -->
     <LinearLayout
         android:id="@+id/assignmentBar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="#1B263B"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingStart="16dp"
-        android:paddingTop="6dp"
-        android:paddingEnd="16dp"
-        android:paddingBottom="2dp">
+        android:orientation="vertical"
+        android:paddingStart="12dp"
+        android:paddingTop="8dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="4dp">
 
         <TextView
             android:id="@+id/tvSelectedPlayer"
-            android:layout_width="150dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Selected: none"
             android:textColor="#FCA311"
             android:textSize="16sp"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            android:layout_marginBottom="6dp" />
 
-        <TextView
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="8dp"
-            android:text="Assignment"
-            android:textColor="#FFFFFF"
-            android:textSize="15sp" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
 
-        <Spinner
-            android:id="@+id/spinnerAssignment"
-            android:layout_width="190dp"
-            android:layout_height="44dp"
-            android:background="@drawable/create_play_input"
-            android:popupBackground="#FFFFFF" />
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:layout_marginEnd="8dp">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="20dp"
-            android:layout_marginEnd="8dp"
-            android:text="Instruction"
-            android:textColor="#FFFFFF"
-            android:textSize="15sp" />
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Assignment"
+                    android:textColor="#FFFFFF"
+                    android:textSize="14sp"
+                    android:layout_marginBottom="4dp" />
 
-        <EditText
-            android:id="@+id/etInstruction"
-            android:autoHandwritingEnabled="false"
-            tools:targetApi="33"
-            android:layout_width="0dp"
-            android:layout_height="44dp"
-            android:layout_weight="1"
-            android:background="@drawable/create_play_input"
-            android:hint="Written instruction for the selected player"
-            android:imeOptions="actionDone|flagNoExtractUi"
-            android:inputType="textCapSentences"
-            android:maxLines="1"
-            android:textColor="#FFFFFF"
-            android:textColorHint="#778DA9"
-            android:textSize="15sp" />
+                <Spinner
+                    android:id="@+id/spinnerAssignment"
+                    android:layout_width="match_parent"
+                    android:layout_height="44dp"
+                    android:background="@drawable/create_play_input"
+                    android:popupBackground="#FFFFFF" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1.4"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Instruction"
+                    android:textColor="#FFFFFF"
+                    android:textSize="14sp"
+                    android:layout_marginBottom="4dp" />
+
+                <EditText
+                    android:id="@+id/etInstruction"
+                    android:layout_width="match_parent"
+                    android:layout_height="44dp"
+                    android:background="@drawable/create_play_input"
+                    android:hint="Enter player instruction"
+                    android:imeOptions="actionDone|flagNoExtractUi"
+                    android:inputType="textCapSentences"
+                    android:maxLines="1"
+                    android:autoHandwritingEnabled="false"
+                    tools:targetApi="33"
+                    android:textColor="#FFFFFF"
+                    android:textColorHint="#778DA9"
+                    android:textSize="15sp" />
+            </LinearLayout>
+        </LinearLayout>
     </LinearLayout>
 
     <!-- Tools -->
@@ -293,54 +314,74 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="#1B263B"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingStart="16dp"
-        android:paddingEnd="16dp"
-        android:paddingBottom="4dp">
-
-        <Button
-            android:id="@+id/btnMovePlayers"
-            style="@style/Widget.Material3.Button.OutlinedButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="8dp"
-            android:text="MOVE PLAYERS" />
-
-        <Button
-            android:id="@+id/btnDrawRoute"
-            style="@style/Widget.Material3.Button.OutlinedButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="16dp"
-            android:text="DRAW ROUTE" />
+        android:orientation="vertical"
+        android:paddingStart="12dp"
+        android:paddingTop="4dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="8dp">
 
         <TextView
             android:id="@+id/tvModeHint"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
+            android:gravity="center"
             android:textColor="#B0BCCB"
-            android:textSize="13sp" />
+            android:textSize="14sp"
+            android:layout_marginBottom="6dp" />
 
-        <Button
-            android:id="@+id/btnClearRoute"
-            style="@style/Widget.Material3.Button.OutlinedButton"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="8dp"
-            android:text="CLEAR SELECTED ROUTE"
-            android:textColor="#FFFFFF"
-            app:strokeColor="#415A77" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
 
-        <Button
-            android:id="@+id/btnResetFormation"
-            style="@style/Widget.Material3.Button.OutlinedButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="RESET FORMATION"
-            android:textColor="#FF6B6B"
-            app:strokeColor="#FF6B6B" />
+            <Button
+                android:id="@+id/btnMovePlayers"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="6dp"
+                android:minWidth="0dp"
+                android:text="MOVE PLAYERS"
+                android:textSize="11sp" />
+
+            <Button
+                android:id="@+id/btnDrawRoute"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="6dp"
+                android:minWidth="0dp"
+                android:text="DRAW ROUTE"
+                android:textSize="11sp" />
+
+            <Button
+                android:id="@+id/btnClearRoute"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1.25"
+                android:layout_marginEnd="6dp"
+                android:minWidth="0dp"
+                android:text="CLEAR SELECTED ROUTE"
+                android:textSize="10sp"
+                android:textColor="#FFFFFF"
+                app:strokeColor="#415A77" />
+
+            <Button
+                android:id="@+id/btnResetFormation"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1.15"
+                android:minWidth="0dp"
+                android:text="RESET FORMATION"
+                android:textSize="10sp"
+                android:textColor="#FF6B6B"
+                app:strokeColor="#FF6B6B" />
+        </LinearLayout>
     </LinearLayout>
 
 </LinearLayout>

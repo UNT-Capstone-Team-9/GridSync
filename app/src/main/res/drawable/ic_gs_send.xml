@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Send Messages: paper plane with green speed lines. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="48dp" android:height="48dp" android:viewportWidth="48" android:viewportHeight="48">
+    <path android:pathData="M16,11L44,24L16,37L20.5,24Z" android:strokeColor="#F5F7FA" android:strokeWidth="2.4" android:strokeLineJoin="round" />
+    <path android:pathData="M20.5,24H33" android:strokeColor="#F5F7FA" android:strokeWidth="2.2" android:strokeLineCap="round" />
+    <path android:pathData="M3,20h9M5,28h8" android:strokeColor="#46D369" android:strokeWidth="2.6" android:strokeLineCap="round" />
+</vector>

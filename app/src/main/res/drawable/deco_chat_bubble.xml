@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Faint chat bubble behind the Send Messages card. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="200dp" android:height="140dp" android:viewportWidth="200" android:viewportHeight="140">
+    <path android:pathData="M60,18h120a10,10 0,0 1,10 10v58a10,10 0,0 1,-10 10h-88l-22,22v-22h-10a10,10 0,0 1,-10 -10v-58a10,10 0,0 1,10 -10z" android:strokeColor="#F5F7FA" android:strokeAlpha="0.13" android:strokeWidth="4" android:strokeLineJoin="round" />
+    <path android:pathData="M78,46h86M78,66h60" android:strokeColor="#F5F7FA" android:strokeAlpha="0.13" android:strokeWidth="4" android:strokeLineCap="round" />
+</vector>

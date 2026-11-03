@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Short green underline under panel titles. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <solid android:color="@color/gridsync_green_bright" />
+    <corners android:radius="2dp" />
+</shape>

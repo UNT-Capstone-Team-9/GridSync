@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Faint chalkboard play (X's, O's and routes) behind the play cards. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="200dp" android:height="140dp" android:viewportWidth="200" android:viewportHeight="140">
+    <group android:name="defense">
+        <path android:pathData="M56,26l11,11M67,26l-11,11M98,40l11,11M109,40l-11,11M146,22l11,11M157,22l-11,11M172,60l11,11M183,60l-11,11" android:strokeColor="#F5F7FA" android:strokeAlpha="0.16" android:strokeWidth="3" android:strokeLineCap="round" />
+    </group>
+    <path android:pathData="M30,104a8,8 0,1 1,0.01 0zM74,116a8,8 0,1 1,0.01 0zM118,104a8,8 0,1 1,0.01 0zM170,116a8,8 0,1 1,0.01 0z" android:strokeColor="#F5F7FA" android:strokeAlpha="0.16" android:strokeWidth="3" />
+    <path android:pathData="M30,94C30,60 46,38 82,16M118,94C126,70 146,58 186,48M170,106V58" android:strokeColor="#46D369" android:strokeAlpha="0.28" android:strokeWidth="3" android:strokeLineCap="round" />
+    <path android:pathData="M82,16l-11,1M82,16l-4,10M186,48l-10,-3M186,48l-6,8M170,58l-6,9M170,58l6,9" android:strokeColor="#46D369" android:strokeAlpha="0.28" android:strokeWidth="3" android:strokeLineCap="round" />
+</vector>
