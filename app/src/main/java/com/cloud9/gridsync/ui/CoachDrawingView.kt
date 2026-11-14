@@ -20,7 +20,7 @@ import kotlin.math.hypot
 import kotlin.math.min
 import kotlin.math.sin
 
-class CoachDrawingView(context: Context, attrs: AttributeSet) : View(context, attrs) {
+class CoachDrawingView(context: Context, attrs: AttributeSet? = null) : View(context, attrs) {
 
     enum class Mode { MOVE, ROUTE }
 

@@ -24,6 +24,9 @@ import com.cloud9.gridsync.network.SessionLogManager
 import com.cloud9.gridsync.network.TabletServerManager
 import com.google.gson.Gson
 import kotlin.concurrent.thread
+import android.widget.FrameLayout
+import com.cloud9.gridsync.ui.CoachDrawingView
+import com.cloud9.gridsync.network.PlayFormation
 
 class PlayLibraryActivity : AppCompatActivity() {
 
@@ -36,6 +39,12 @@ class PlayLibraryActivity : AppCompatActivity() {
 
     private val gson = Gson()
     private var selectedPlay: PlayMessage? = null
+    private lateinit var previewPlaceholder: TextView
+    private lateinit var previewContainer: android.widget.FrameLayout
+    private lateinit var previewPlayName: TextView
+    private lateinit var previewActions: android.widget.LinearLayout
+    private lateinit var previewEditButton: Button
+    private lateinit var previewSendButton: Button
     private var allVisiblePlays: List<PlayMessage> = emptyList()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -50,6 +59,32 @@ class PlayLibraryActivity : AppCompatActivity() {
         sendButton = findViewById(R.id.sendButton)
         searchInput = findViewById(R.id.searchInput)
         sortSpinner = findViewById(R.id.sortSpinner)
+        previewPlaceholder = findViewById(R.id.tvPreviewPlaceholder)
+        previewContainer = findViewById(R.id.playPreviewContainer)
+        previewPlayName = findViewById(R.id.tvPreviewPlayName)
+        previewActions = findViewById(R.id.previewActions)
+        previewEditButton = findViewById(R.id.btnPreviewEdit)
+        previewSendButton = findViewById(R.id.btnPreviewSend)
+
+        previewEditButton.setOnClickListener {
+            selectedPlay?.let { play ->
+                val intent = Intent(this, CreatePlayActivity::class.java)
+                intent.putExtra("edit_play_json", gson.toJson(play))
+                startActivity(intent)
+            }
+        }
+
+        previewSendButton.setOnClickListener {
+            selectedPlay?.let { play ->
+                TabletServerManager.sendPlayToAssigned(play)
+                SessionLogManager.addEntry("Play sent ${play.playName}")
+                Toast.makeText(
+                    this,
+                    "Play sent ${play.playName}",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
 
         backButton.setOnClickListener {
             finish()
@@ -86,6 +121,7 @@ class PlayLibraryActivity : AppCompatActivity() {
             onPlayClicked = { play ->
                 selectedPlay = play
                 sendButton.isEnabled = true
+                showPlayPreview(play)
             },
             onEditClicked = { play ->
                 val intent = Intent(this@PlayLibraryActivity, CreatePlayActivity::class.java)
@@ -171,9 +207,26 @@ class PlayLibraryActivity : AppCompatActivity() {
             allVisiblePlays.filter { it.playName.lowercase().contains(query) }
         }
 
+        val previouslySelectedName = selectedPlay?.playName
+
         adapter.replaceAll(filtered)
-        selectedPlay = adapter.getSelectedPlay()
-        sendButton.isEnabled = selectedPlay != null
+
+        val refreshedPlay = filtered.firstOrNull {
+            it.playName == previouslySelectedName
+        }
+
+        selectedPlay = refreshedPlay
+        sendButton.isEnabled = refreshedPlay != null
+
+        if (refreshedPlay != null) {
+            showPlayPreview(refreshedPlay)
+        } else {
+            previewPlaceholder.visibility = View.VISIBLE
+            previewContainer.visibility = View.GONE
+            previewPlayName.visibility = View.GONE
+            previewActions.visibility = View.GONE
+            previewContainer.removeAllViews()
+        }
         emptyStateText.visibility = if (filtered.isEmpty()) View.VISIBLE else View.GONE
         playRecyclerView.visibility = if (filtered.isEmpty()) View.GONE else View.VISIBLE
     }
@@ -252,5 +305,35 @@ class PlayLibraryActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+    private fun showPlayPreview(play: PlayMessage) {
+        previewPlaceholder.visibility = View.GONE
+        previewContainer.visibility = View.VISIBLE
+        previewPlayName.visibility = View.VISIBLE
+        previewActions.visibility = View.VISIBLE
+
+        previewPlayName.text = play.playName
+
+        val loaded = PlayFormation.fromSavedPlay(play)
+
+        previewContainer.removeAllViews()
+
+        val drawingView = CoachDrawingView(this, null)
+
+        drawingView.layoutParams = FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            FrameLayout.LayoutParams.MATCH_PARENT
+        )
+
+        drawingView.setFormation(
+            loaded.players,
+            loaded.movements
+        )
+
+        // Disable interaction in the preview.
+        // The Edit Play button opens the actual editor.
+        drawingView.setOnTouchListener { _, _ -> true }
+
+        previewContainer.addView(drawingView)
     }
 }
