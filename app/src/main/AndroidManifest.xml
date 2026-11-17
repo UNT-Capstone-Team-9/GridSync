@@ -20,6 +20,7 @@
         <activity android:name="com.cloud9.gridsync.SendPlayActivity" />
         <activity android:name="com.cloud9.gridsync.AssignWatchesActivity" />
         <activity android:name="com.cloud9.gridsync.PlayLibraryActivity" />
+        <activity android:name="com.cloud9.gridsync.PlaysMenuActivity" />
         <activity
             android:name="com.cloud9.gridsync.CreatePlayActivity"
             android:windowSoftInputMode="adjustPan" />

@@ -11,13 +11,16 @@ import com.cloud9.gridsync.network.PlayMessage
 
 class HurryUpPlayAdapter(
     private val onSend: (PlayMessage) -> Unit,
-    private val onMenu: (View, PlayMessage) -> Unit
+    private val onMenu: (View, PlayMessage) -> Unit,
+    private val onPlayClicked: (PlayMessage) -> Unit = {}
 ) : RecyclerView.Adapter<HurryUpPlayAdapter.PlayViewHolder>() {
 
     private val plays = mutableListOf<PlayMessage>()
+    private var selectedPlayName: String? = null
 
     class PlayViewHolder(parent: ViewGroup) : RecyclerView.ViewHolder(
-        LayoutInflater.from(parent.context).inflate(R.layout.item_hurry_up_play, parent, false)
+        LayoutInflater.from(parent.context)
+            .inflate(R.layout.item_hurry_up_play, parent, false)
     ) {
         val orderText: TextView = itemView.findViewById(R.id.orderText)
         val nameText: TextView = itemView.findViewById(R.id.playNameText)
@@ -26,10 +29,17 @@ class HurryUpPlayAdapter(
         val menuButton: ImageButton = itemView.findViewById(R.id.menuButton)
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) = PlayViewHolder(parent)
+    override fun onCreateViewHolder(
+        parent: ViewGroup,
+        viewType: Int
+    ) = PlayViewHolder(parent)
 
-    override fun onBindViewHolder(holder: PlayViewHolder, position: Int) {
+    override fun onBindViewHolder(
+        holder: PlayViewHolder,
+        position: Int
+    ) {
         val play = plays[position]
+
         holder.orderText.text = "${position + 1}."
         holder.nameText.text = play.playName
 
@@ -37,11 +47,38 @@ class HurryUpPlayAdapter(
             play.formationName?.takeIf { it.isNotBlank() },
             play.playType?.takeIf { it.isNotBlank() }
         ).joinToString(" | ")
-        holder.detailText.text = details
-        holder.detailText.visibility = if (details.isBlank()) View.GONE else View.VISIBLE
 
-        holder.sendButton.setOnClickListener { onSend(play) }
-        holder.menuButton.setOnClickListener { onMenu(it, play) }
+        holder.detailText.text = details
+        holder.detailText.visibility =
+            if (details.isBlank()) View.GONE else View.VISIBLE
+
+        // Highlight the selected play.
+        val isSelected = selectedPlayName == play.playName
+
+        holder.nameText.setTextColor(
+            if (isSelected) {
+                android.graphics.Color.parseColor("#51DF98")
+            } else {
+                android.graphics.Color.WHITE
+            }
+        )
+
+        // Tap a play to open its preview.
+        holder.itemView.setOnClickListener {
+            selectedPlayName = play.playName
+            notifyDataSetChanged()
+            onPlayClicked(play)
+        }
+
+        // Send immediately without opening the preview.
+        holder.sendButton.setOnClickListener {
+            onSend(play)
+        }
+
+        // Preserve the existing play options.
+        holder.menuButton.setOnClickListener {
+            onMenu(it, play)
+        }
     }
 
     override fun getItemCount(): Int = plays.size
@@ -49,6 +86,11 @@ class HurryUpPlayAdapter(
     fun replaceAll(newPlays: List<PlayMessage>) {
         plays.clear()
         plays.addAll(newPlays)
+
+        if (plays.none { it.playName == selectedPlayName }) {
+            selectedPlayName = null
+        }
+
         notifyDataSetChanged()
     }
 }

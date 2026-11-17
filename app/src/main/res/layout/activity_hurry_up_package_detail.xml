@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#0D1B2A"
     android:orientation="vertical">
 
+    <!-- Header -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="64dp"
@@ -54,40 +56,148 @@
             android:contentDescription="Package options"
             android:src="@android:drawable/ic_menu_more"
             app:tint="#FFFFFF" />
+
     </LinearLayout>
 
+    <!-- Instructions -->
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingStart="24dp"
+        android:paddingStart="16dp"
         android:paddingTop="12dp"
-        android:paddingEnd="24dp"
-        android:text="Tap SEND next to a play to send it to the assigned watches right away."
+        android:paddingEnd="16dp"
+        android:paddingBottom="12dp"
+        android:text="Tap a play to preview it or tap SEND to send it immediately."
         android:textColor="#B0BCCB"
         android:textSize="14sp" />
 
-    <FrameLayout
+    <!-- Main split layout -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1">
+        android:layout_weight="1"
+        android:orientation="horizontal"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="12dp">
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/playRecyclerView"
-            android:layout_width="match_parent"
+        <!-- Left panel: Saved plays -->
+        <LinearLayout
+            android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:clipToPadding="false"
-            android:padding="16dp" />
+            android:layout_weight="4"
+            android:orientation="vertical"
+            android:paddingEnd="8dp">
 
-        <TextView
-            android:id="@+id/emptyStateText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:gravity="center"
-            android:text="No plays in this package.\nTap + ADD FROM PLAY LIBRARY."
-            android:textColor="#778DA9"
-            android:textSize="18sp"
-            android:visibility="gone" />
-    </FrameLayout>
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="8dp"
+                android:text="SAVED PLAYS"
+                android:textColor="#B0BCCB"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1">
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/playRecyclerView"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:clipToPadding="false"
+                    android:padding="4dp" />
+
+                <TextView
+                    android:id="@+id/emptyStateText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:gravity="center"
+                    android:padding="12dp"
+                    android:text="No plays in this package.\nTap + ADD FROM PLAY LIBRARY."
+                    android:textColor="#778DA9"
+                    android:textSize="16sp"
+                    android:visibility="gone" />
+
+            </FrameLayout>
+
+        </LinearLayout>
+
+        <!-- Vertical divider -->
+        <View
+            android:layout_width="1dp"
+            android:layout_height="match_parent"
+            android:background="#415A77" />
+
+        <!-- Right panel: Play preview -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="6"
+            android:orientation="vertical"
+            android:paddingStart="12dp">
+
+            <TextView
+                android:id="@+id/previewTitleText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:padding="8dp"
+                android:text="PLAY PREVIEW"
+                android:textColor="#FFFFFF"
+                android:textSize="22sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/previewDetailText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:paddingBottom="8dp"
+                android:textColor="#B0BCCB"
+                android:textSize="14sp" />
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:background="#1B263B">
+
+                <FrameLayout
+                    android:id="@+id/previewContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent" />
+
+                <TextView
+                    android:id="@+id/previewPlaceholderText"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:padding="16dp"
+                    android:text="Select a play to preview its formation and routes"
+                    android:textColor="#B0BCCB"
+                    android:textSize="18sp" />
+
+            </FrameLayout>
+
+            <Button
+                android:id="@+id/previewSendButton"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="12dp"
+                android:enabled="false"
+                android:text="SEND PLAY"
+                android:textColor="#0D1B2A"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                app:backgroundTint="#51DF98"
+                app:cornerRadius="8dp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
 
 </LinearLayout>

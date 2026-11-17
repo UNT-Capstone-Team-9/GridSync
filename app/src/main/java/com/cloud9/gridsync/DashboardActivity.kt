@@ -82,9 +82,8 @@ class DashboardActivity : AppCompatActivity(),
 
         // Plays opens the hub holding the Play Library and Hurry-Up Packages.
         playsCard.setOnClickListener {
-            startActivity(Intent(this, PlayLibraryActivity::class.java))
+            startActivity(Intent(this, PlaysMenuActivity::class.java))
         }
-
         assignWatchesCard.setOnClickListener {
             startActivity(Intent(this, AssignWatchesActivity::class.java))
         }

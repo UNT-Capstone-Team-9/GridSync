@@ -63,6 +63,9 @@ class WatchDashboardActivity : AppCompatActivity(),
         messageTitleText = findViewById(R.id.messageTitleText)
         messageBodyText = findViewById(R.id.messageBodyText)
 
+        // Hide the Coach Message heading.
+        messageTitleText.visibility = View.GONE
+
         playText = findViewById(R.id.playText)
         roleText = findViewById(R.id.playerRoleText)
         playNameText = findViewById(R.id.playNameText)
@@ -87,7 +90,8 @@ class WatchDashboardActivity : AppCompatActivity(),
             showScanningState()
         }
     }
-    //Display Role
+
+    // Display the assigned player role.
     override fun onRoleChanged(role: String) {
         currentRole = role
         waitingRoleText.text = role
@@ -96,7 +100,7 @@ class WatchDashboardActivity : AppCompatActivity(),
         watchRouteView.setRole(role)
     }
 
-    // Displays the play information received from the coach's tablet on the assigned player's watch.
+    // Display football plays received from the coach's tablet.
     override fun onPlayReceived(
         playName: String,
         playTextMessage: String,
@@ -114,9 +118,13 @@ class WatchDashboardActivity : AppCompatActivity(),
         playText.text = playTextMessage
         watchRouteView.setPlay(movements, players, isFullPlay)
 
-        mainHandler.postDelayed(resetToWaitingRunnable, PLAY_DISPLAY_DURATION_MS)
+        mainHandler.postDelayed(
+            resetToWaitingRunnable,
+            PLAY_DISPLAY_DURATION_MS
+        )
     }
 
+    // Display text messages without the Coach Message heading.
     override fun onTextMessageReceived(role: String, message: String) {
         mainHandler.removeCallbacks(resetToWaitingRunnable)
 
@@ -125,11 +133,15 @@ class WatchDashboardActivity : AppCompatActivity(),
         textMessageContainer.visibility = View.VISIBLE
 
         messageRoleText.text = role
-        messageTitleText.text = "Coach Message"
+        messageTitleText.visibility = View.GONE
         messageBodyText.text = message
+
         watchRouteView.setMovements(emptyMap())
 
-        mainHandler.postDelayed(resetToWaitingRunnable, MESSAGE_DISPLAY_DURATION_MS)
+        mainHandler.postDelayed(
+            resetToWaitingRunnable,
+            MESSAGE_DISPLAY_DURATION_MS
+        )
     }
 
     override fun onDestroy() {
@@ -161,7 +173,11 @@ class WatchDashboardActivity : AppCompatActivity(),
     }
 
     private fun getOrCreateWatchId(): String {
-        val prefs = getSharedPreferences("watch_prefs", Context.MODE_PRIVATE)
+        val prefs = getSharedPreferences(
+            "watch_prefs",
+            Context.MODE_PRIVATE
+        )
+
         var id = prefs.getString("watch_id", null)
 
         if (id == null) {
